@@ -1,0 +1,20 @@
+{
+  "name": "Modulo Philips",
+  "short_name": "Modulo Philips",
+  "description": "Rapporto formazione applicativa Philips",
+  "lang": "it",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#f4f7fb",
+  "theme_color": "#0b5ede",
+  "icons": [
+    {
+      "src": "icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
