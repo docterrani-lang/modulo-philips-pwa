@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="96" fill="#0b5ede"/>
+  <text x="256" y="215" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="106" font-weight="700" fill="#fff">PH</text>
+  <text x="256" y="282" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="38" font-weight="700" fill="#fff">MODULO</text>
+  <rect x="84" y="326" width="344" height="36" rx="18" fill="#e1eeff"/>
+  <rect x="84" y="392" width="248" height="36" rx="18" fill="#e1eeff"/>
+</svg>
