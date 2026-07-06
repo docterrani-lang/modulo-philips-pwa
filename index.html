@@ -692,6 +692,7 @@
       refreshTables();
     });
 
+    // setupCanvas version robusta (gestione devicePixelRatio, pointer events, cancellazione)
     function setupCanvas(id) {
       const canvas = $(id);
       const ctx = canvas.getContext("2d");
@@ -701,16 +702,24 @@
       function resize() {
         const rect = canvas.getBoundingClientRect();
         const ratio = window.devicePixelRatio || 1;
-        const image = canvas.toDataURL();
+        // salva immagine se presente
+        let data = null;
+        try { data = canvas.toDataURL(); } catch (e) { data = null; }
+        // imposta dimensione reale in pixel
         canvas.width = Math.max(1, Math.floor(rect.width * ratio));
         canvas.height = Math.max(1, Math.floor(rect.height * ratio));
+        // usa trasformazione per lavorare in CSS pixels
         ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+        // sfondo bianco
         ctx.fillStyle = "#fff";
         ctx.fillRect(0, 0, rect.width, rect.height);
-        if (image && image.length > 100) {
+        // ripristina immagine se presente
+        if (data && data.length > 100) {
           const img = new Image();
-          img.onload = () => ctx.drawImage(img, 0, 0, rect.width, rect.height);
-          img.src = image;
+          img.onload = () => {
+            try { ctx.drawImage(img, 0, 0, rect.width, rect.height); } catch (e) {}
+          };
+          img.src = data;
         }
       }
 
@@ -722,13 +731,13 @@
         };
       }
 
-      canvas.addEventListener("pointerdown", (event) => {
+      function start(event) {
         drawing = true;
         last = point(event);
-        canvas.setPointerCapture(event.pointerId);
-      });
+        try { canvas.setPointerCapture(event.pointerId); } catch (e) {}
+      }
 
-      canvas.addEventListener("pointermove", (event) => {
+      function draw(event) {
         if (!drawing || !last) return;
         const next = point(event);
         ctx.strokeStyle = "#000";
@@ -740,13 +749,25 @@
         ctx.lineTo(next.x, next.y);
         ctx.stroke();
         last = next;
-      });
+      }
 
-      canvas.addEventListener("pointerup", () => {
+      function stop(event) {
         drawing = false;
         last = null;
-      });
+        try { canvas.releasePointerCapture(event.pointerId); } catch (e) {}
+      }
 
+      // listener pointer (supporta mouse, touch e pen)
+      canvas.addEventListener("pointerdown", start);
+      canvas.addEventListener("pointermove", draw);
+      canvas.addEventListener("pointerup", stop);
+      canvas.addEventListener("pointercancel", stop);
+      canvas.addEventListener("pointerout", stop);
+
+      // assicurati che il canvas non sia scorrevole su touch
+      canvas.style.touchAction = "none";
+
+      // inizializza e ridimensiona
       resize();
       window.addEventListener("resize", resize);
     }
@@ -754,18 +775,27 @@
     setupCanvas("firmaIstruttore");
     setupCanvas("firmaCliente");
 
+    // migliorata cancellazione: usa dimensione reale e gestisce transform
     document.querySelectorAll("[data-clear]").forEach((button) => {
       button.addEventListener("click", () => {
         const canvas = $(button.dataset.clear);
         const ctx = canvas.getContext("2d");
-        const rect = canvas.getBoundingClientRect();
+        // Reset transform e cancella usando pixel reali
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
         ctx.fillStyle = "#fff";
-        ctx.fillRect(0, 0, rect.width, rect.height);
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        // Imposta nuovamente transform per devicePixelRatio in modo coerente con resize
+        const ratio = window.devicePixelRatio || 1;
+        ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
       });
     });
 
     function signatureImage(id) {
-      return $(id).toDataURL("image/png");
+      try {
+        return $(id).toDataURL("image/png");
+      } catch (e) {
+        return "";
+      }
     }
 
     function buildPrint() {
@@ -843,5 +873,3 @@
   </script>
 </body>
 </html>
-
-
