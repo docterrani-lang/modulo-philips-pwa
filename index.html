@@ -5,11 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#0b5ede">
   <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-title" content="Modulo Philips">
+  <meta name="apple-mobile-web-app-title" content="Modulo Philips">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="application-name" content="Modulo Philips">
-  <link rel="manifest" href="manifest.json">
-  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
   <title>Modulo Philips APP</title>
   <style>
     :root {
@@ -22,344 +20,55 @@
       --ok: #087443;
       --danger: #b42318;
     }
-
-    * {
-      box-sizing: border-box;
-    }
-
-    body {
-      margin: 0;
-      background: var(--soft);
-      color: var(--ink);
-      font-family: Arial, Helvetica, sans-serif;
-      font-size: 15px;
-      line-height: 1.35;
-    }
-
-    header {
-      position: sticky;
-      top: 0;
-      z-index: 10;
-      background: var(--white);
-      border-bottom: 1px solid var(--line);
-      padding: 12px 14px;
-    }
-
-    .brand {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-    }
-
-    .brand strong {
-      color: var(--blue);
-      font-size: 20px;
-      letter-spacing: 1px;
-    }
-
-    .brand span {
-      color: var(--muted);
-      font-size: 12px;
-      text-align: right;
-    }
-
-    nav {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 6px;
-      margin-top: 12px;
-    }
-
-    nav button,
-    .actions button,
-    .inline button,
-    .danger-button {
-      min-height: 42px;
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      background: var(--white);
-      color: var(--ink);
-      font: inherit;
-      font-weight: 700;
-      cursor: pointer;
-    }
-
-    nav button.active {
-      background: var(--blue);
-      border-color: var(--blue);
-      color: var(--white);
-    }
-
-    main {
-      max-width: 980px;
-      margin: 0 auto;
-      padding: 14px;
-    }
-
-    section {
-      display: none;
-    }
-
-    section.active {
-      display: block;
-    }
-
-    .panel {
-      background: var(--white);
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      padding: 14px;
-      margin-bottom: 12px;
-    }
-
-    h1,
-    h2 {
-      margin: 0 0 12px;
-      font-size: 18px;
-    }
-
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 12px;
-    }
-
-    label {
-      display: block;
-      color: var(--muted);
-      font-size: 12px;
-      font-weight: 700;
-      margin-bottom: 5px;
-      text-transform: uppercase;
-    }
-
-    input,
-    select,
-    textarea {
-      width: 100%;
-      min-height: 42px;
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      background: var(--white);
-      color: var(--ink);
-      font: inherit;
-      padding: 9px 10px;
-    }
-
-    textarea {
-      min-height: 92px;
-      resize: vertical;
-    }
-
-    .inline {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-      align-items: end;
-    }
-
-    .actions {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 8px;
-      margin-top: 10px;
-    }
-
-    .actions .primary {
-      background: var(--blue);
-      border-color: var(--blue);
-      color: var(--white);
-    }
-
-    .actions .success {
-      background: var(--ok);
-      border-color: var(--ok);
-      color: var(--white);
-    }
-
-    .danger-button {
-      color: var(--danger);
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 10px;
-      background: var(--white);
-    }
-
-    th,
-    td {
-      border-bottom: 1px solid var(--line);
-      padding: 8px 6px;
-      text-align: left;
-      vertical-align: top;
-      font-size: 13px;
-    }
-
-    th {
-      color: var(--muted);
-      font-size: 11px;
-      text-transform: uppercase;
-    }
-
-    .checks {
-      display: grid;
-      gap: 8px;
-    }
-
-    .check-row {
-      display: flex;
-      gap: 10px;
-      align-items: center;
-      color: var(--ink);
-    }
-
-    .check-row input {
-      width: 20px;
-      min-height: 20px;
-    }
-
-    .signature-grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 12px;
-    }
-
-    canvas {
-      width: 100%;
-      height: 150px;
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      background: #fff;
-      touch-action: none;
-    }
-
-    .small {
-      color: var(--muted);
-      font-size: 12px;
-      margin-top: 8px;
-    }
-
-    #toast {
-      position: fixed;
-      left: 12px;
-      right: 12px;
-      bottom: 12px;
-      z-index: 50;
-      display: none;
-      border-radius: 8px;
-      background: #172033;
-      color: white;
-      padding: 12px;
-      text-align: center;
-    }
-
-    #printArea {
-      display: none;
-    }
-
-    @media (max-width: 720px) {
-      .grid,
-      .inline,
-      .signature-grid,
-      .actions {
-        grid-template-columns: 1fr;
-      }
-
-      nav button {
-        font-size: 13px;
-        padding: 6px;
-      }
-
-      main {
-        padding: 10px;
-      }
-    }
-
+    * { box-sizing: border-box; }
+    body { margin:0; background:var(--soft); color:var(--ink); font-family:Arial,Helvetica,sans-serif; font-size:15px; line-height:1.35; }
+    header { position:sticky; top:0; z-index:10; background:var(--white); border-bottom:1px solid var(--line); padding:12px 14px; }
+    .brand { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+    .brand strong { color:var(--blue); font-size:20px; letter-spacing:1px; }
+    .brand span { color:var(--muted); font-size:12px; text-align:right; }
+    nav { display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin-top:12px; }
+    nav button, .actions button, .inline button, .danger-button { min-height:42px; border:1px solid var(--line); border-radius:8px; background:var(--white); color:var(--ink); font:inherit; font-weight:700; cursor:pointer; }
+    nav button.active { background:var(--blue); border-color:var(--blue); color:var(--white); }
+    main { max-width:980px; margin:0 auto; padding:14px; }
+    section { display:none; }
+    section.active { display:block; }
+    .panel { background:var(--white); border:1px solid var(--line); border-radius:8px; padding:14px; margin-bottom:12px; }
+    h1,h2 { margin:0 0 12px; font-size:18px; }
+    .grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+    label { display:block; color:var(--muted); font-size:12px; font-weight:700; margin-bottom:5px; text-transform:uppercase; }
+    input, select, textarea { width:100%; min-height:42px; border:1px solid var(--line); border-radius:8px; background:var(--white); color:var(--ink); font:inherit; padding:9px 10px; }
+    textarea { min-height:92px; resize:vertical; }
+    .inline { display:grid; grid-template-columns:1fr 1fr; gap:8px; align-items:end; }
+    .actions { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; margin-top:10px; }
+    .actions .primary { background:var(--blue); border-color:var(--blue); color:var(--white); }
+    .actions .success { background:var(--ok); border-color:var(--ok); color:var(--white); }
+    .danger-button { color:var(--danger); }
+    table { width:100%; border-collapse:collapse; margin-top:10px; background:var(--white); }
+    th,td { border-bottom:1px solid var(--line); padding:8px 6px; text-align:left; vertical-align:top; font-size:13px; }
+    th { color:var(--muted); font-size:11px; text-transform:uppercase; }
+    .checks { display:grid; gap:8px; }
+    .check-row { display:flex; gap:10px; align-items:center; color:var(--ink); }
+    .check-row input { width:20px; min-height:20px; }
+    .signature-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+    canvas { width:100%; height:150px; border:1px solid var(--line); border-radius:8px; background:#fff; touch-action:none; display:block; }
+    .small { color:var(--muted); font-size:12px; margin-top:8px; }
+    #toast { position:fixed; left:12px; right:12px; bottom:12px; z-index:50; display:none; border-radius:8px; background:#172033; color:white; padding:12px; text-align:center; }
+    #printArea { display:none; }
+    @media (max-width:720px) { .grid, .inline, .signature-grid, .actions { grid-template-columns:1fr; } nav button { font-size:13px; padding:6px; } main { padding:10px; } }
     @media print {
-      body > header,
-      body > main,
-      #toast {
-        display: none !important;
-      }
-
-      #printArea {
-        display: block;
-        color: #000;
-        font-family: Arial, Helvetica, sans-serif;
-      }
-
-      @page {
-        size: A4;
-        margin: 12mm;
-      }
-
-      .print-title {
-        color: #0b5ede;
-        font-size: 26px;
-        font-weight: 700;
-        margin-bottom: 14px;
-      }
-
-      .print-heading {
-        font-size: 16px;
-        font-weight: 700;
-        margin: 14px 0 8px;
-      }
-
-      .print-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        border: 1px solid #000;
-        border-bottom: 0;
-      }
-
-      .print-cell {
-        border-right: 1px solid #000;
-        border-bottom: 1px solid #000;
-        padding: 7px;
-        min-height: 34px;
-      }
-
-      .print-cell:nth-child(2n) {
-        border-right: 0;
-      }
-
-      .print-label {
-        color: #555;
-        font-size: 10px;
-        font-weight: 700;
-        margin-bottom: 3px;
-      }
-
-      .print-table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-bottom: 12px;
-      }
-
-      .print-table th,
-      .print-table td {
-        border: 1px solid #000;
-        padding: 6px;
-        font-size: 11px;
-      }
-
-      .print-signatures {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 28px;
-        margin-top: 24px;
-      }
-
-      .print-signature img {
-        width: 190px;
-        height: 76px;
-        object-fit: contain;
-        border-bottom: 1px solid #000;
-      }
+      body > header, body > main, #toast { display:none !important; }
+      #printArea { display:block; color:#000; font-family:Arial,Helvetica,sans-serif; }
+      @page { size:A4; margin:12mm; }
+      .print-title { color:#0b5ede; font-size:26px; font-weight:700; margin-bottom:14px; }
+      .print-heading { font-size:16px; font-weight:700; margin:14px 0 8px; }
+      .print-grid { display:grid; grid-template-columns:1fr 1fr; border:1px solid #000; border-bottom:0; }
+      .print-cell { border-right:1px solid #000; border-bottom:1px solid #000; padding:7px; min-height:34px; }
+      .print-cell:nth-child(2n) { border-right:0; }
+      .print-label { color:#555; font-size:10px; font-weight:700; margin-bottom:3px; }
+      .print-table { width:100%; border-collapse:collapse; margin-bottom:12px; }
+      .print-table th, .print-table td { border:1px solid #000; padding:6px; font-size:11px; }
+      .print-signatures { display:grid; grid-template-columns:1fr 1fr; gap:28px; margin-top:24px; }
+      .print-signature img { width:190px; height:76px; object-fit:contain; border-bottom:1px solid #000; }
     }
   </style>
 </head>
@@ -381,64 +90,26 @@
       <div class="panel">
         <h1>Dati e attivita</h1>
         <div class="grid">
-          <div>
-            <label for="cliente">Cliente / Reparto</label>
-            <input id="cliente" autocomplete="organization">
-          </div>
-          <div>
-            <label for="project">Project N.</label>
-            <input id="project">
-          </div>
-          <div>
-            <label for="sistema">Sistema / Modello</label>
-            <input id="sistema">
-          </div>
-          <div>
-            <label for="serial">Serial Number</label>
-            <input id="serial">
-          </div>
+          <div><label for="cliente">Cliente / Reparto</label><input id="cliente" autocomplete="organization"></div>
+          <div><label for="project">Project N.</label><input id="project"></div>
+          <div><label for="sistema">Sistema / Modello</label><input id="sistema"></div>
+          <div><label for="serial">Serial Number</label><input id="serial"></div>
         </div>
       </div>
 
       <div class="panel">
         <h2>Attivita giornaliere</h2>
         <div class="grid">
-          <div>
-            <label for="tipoAttivita">Attivita</label>
-            <select id="tipoAttivita">
-              <option>Training Applicativo</option>
-              <option>Clinical Application</option>
-              <option>Follow-up Training</option>
-              <option>Handover / Affiancamento</option>
-            </select>
-          </div>
-          <div>
-            <label for="dataAttivita">Data</label>
-            <input id="dataAttivita" type="date">
-          </div>
-          <div>
-            <label for="oraInizio">Ora inizio</label>
-            <input id="oraInizio" type="time" value="08:00">
-          </div>
-          <div>
-            <label for="oraFine">Ora fine</label>
-            <input id="oraFine" type="time" value="16:00">
-          </div>
+          <div><label for="tipoAttivita">Attivita</label><select id="tipoAttivita"><option>Training Applicativo</option><option>Clinical Application</option><option>Follow-up Training</option><option>Handover / Affiancamento</option></select></div>
+          <div><label for="dataAttivita">Data</label><input id="dataAttivita" type="date"></div>
+          <div><label for="oraInizio">Ora inizio</label><input id="oraInizio" type="time" value="08:00"></div>
+          <div><label for="oraFine">Ora fine</label><input id="oraFine" type="time" value="16:00"></div>
         </div>
         <div class="actions">
           <button type="button" class="primary" id="addAttivita">Aggiungi giorno</button>
           <button type="button" class="danger-button" id="clearAttivita">Svuota elenco</button>
         </div>
-        <table>
-          <thead>
-            <tr>
-              <th>Tipo</th>
-              <th>Inizio</th>
-              <th>Fine</th>
-            </tr>
-          </thead>
-          <tbody id="attivitaBody"></tbody>
-        </table>
+        <table><thead><tr><th>Tipo</th><th>Inizio</th><th>Fine</th></tr></thead><tbody id="attivitaBody"></tbody></table>
       </div>
 
       <div class="panel">
@@ -456,40 +127,15 @@
       <div class="panel">
         <h1>Elenco partecipanti</h1>
         <div class="grid">
-          <div>
-            <label for="nomePartecipante">Nome Cognome</label>
-            <input id="nomePartecipante" autocomplete="name">
-          </div>
-          <div>
-            <label for="qualifica">Qualifica</label>
-            <select id="qualifica">
-              <option value=""></option>
-              <option>TSRM</option>
-              <option>DOTT</option>
-              <option>ING</option>
-              <option>FISICO</option>
-              <option>INF</option>
-            </select>
-          </div>
-          <div>
-            <label for="dataPartecipante">Data</label>
-            <input id="dataPartecipante" type="date">
-          </div>
+          <div><label for="nomePartecipante">Nome Cognome</label><input id="nomePartecipante" autocomplete="name"></div>
+          <div><label for="qualifica">Qualifica</label><select id="qualifica"><option value=""></option><option>TSRM</option><option>DOTT</option><option>ING</option><option>FISICO</option><option>INF</option></select></div>
+          <div><label for="dataPartecipante">Data</label><input id="dataPartecipante" type="date"></div>
         </div>
         <div class="actions">
           <button type="button" class="primary" id="addPartecipante">Aggiungi partecipante</button>
           <button type="button" class="danger-button" id="clearPartecipanti">Svuota elenco</button>
         </div>
-        <table>
-          <thead>
-            <tr>
-              <th>Nome Cognome</th>
-              <th>Qualifica</th>
-              <th>Data</th>
-            </tr>
-          </thead>
-          <tbody id="partecipantiBody"></tbody>
-        </table>
+        <table><thead><tr><th>Nome Cognome</th><th>Qualifica</th><th>Data</th></tr></thead><tbody id="partecipantiBody"></tbody></table>
       </div>
     </section>
 
@@ -497,14 +143,8 @@
       <div class="panel">
         <h1>Firme</h1>
         <div class="grid">
-          <div>
-            <label for="istruttore">Application Specialist</label>
-            <input id="istruttore">
-          </div>
-          <div>
-            <label for="respCliente">Resp. Cliente</label>
-            <input id="respCliente">
-          </div>
+          <div><label for="istruttore">Application Specialist</label><input id="istruttore"></div>
+          <div><label for="respCliente">Resp. Cliente</label><input id="respCliente"></div>
         </div>
         <div class="signature-grid" style="margin-top:12px">
           <div>
@@ -523,22 +163,8 @@
       <div class="panel">
         <h2>Invio email</h2>
         <div class="grid">
-          <div>
-            <label for="mailA">A</label>
-            <select id="mailA">
-              <option>paola.bessi@philips.com</option>
-            </select>
-          </div>
-          <div>
-            <label for="mailDa">Mittente Philips</label>
-            <select id="mailDa">
-              <option>simone.terrani@philips.com</option>
-              <option>alfredo.sanguinetti@philips.com</option>
-              <option>bruna.centola@philips.com</option>
-              <option>luca.colombo@philips.com</option>
-              <option>catello.d'arco@philips.com</option>
-            </select>
-          </div>
+          <div><label for="mailA">A</label><select id="mailA"><option>paola.bessi@philips.com</option></select></div>
+          <div><label for="mailDa">Mittente Philips</label><select id="mailDa"><option>simone.terrani@philips.com</option><option>alfredo.sanguinetti@philips.com</option><option>bruna.centola@philips.com</option><option>luca.colombo@philips.com</option><option>catello.d'arco@philips.com</option></select></div>
         </div>
         <div class="actions">
           <button type="button" class="success" id="generaPdf">Genera PDF</button>
@@ -553,146 +179,43 @@
   <div id="toast"></div>
 
   <script>
-    const state = {
-      attivita: [],
-      partecipanti: []
-    };
-
-    const $ = (id) => document.getElementById(id);
-
-    function toast(message) {
-      const el = $("toast");
-      el.textContent = message;
-      el.style.display = "block";
-      window.setTimeout(() => {
-        el.style.display = "none";
-      }, 2600);
-    }
-
-    function value(id) {
-      return ($(id).value || "").trim();
-    }
-
-    function esc(text) {
-      return String(text || "")
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;");
-    }
-
-    function formatDate(inputValue) {
-      if (!inputValue) return "";
-      const parts = inputValue.split("-");
-      if (parts.length !== 3) return inputValue;
-      return `${parts[2]}/${parts[1]}/${parts[0]}`;
-    }
-
-    function cleanFilePart(text, fallback) {
-      const cleaned = String(text || fallback)
-        .trim()
-        .replace(/[<>:"/\\|?*]+/g, "-")
-        .replace(/\s+/g, "_");
-      return cleaned || fallback;
-    }
-
-    function fileName() {
-      const today = new Date().toISOString().slice(0, 10);
-      const specialist = cleanFilePart(value("istruttore"), "Application_Specialist");
-      const project = cleanFilePart(value("project"), "Project");
-      return `${specialist}_${project}_${today}.pdf`;
-    }
-
-    function subject() {
-      const specialist = value("istruttore") || "Application Specialist non indicato";
-      const serial = value("serial") || "Serial Number non indicato";
-      return `Rapporto Formazione Philips - ${specialist} - SN ${serial}`;
-    }
-
-    function refreshTables() {
-      $("attivitaBody").innerHTML = state.attivita.map((row) => `
-        <tr>
-          <td>${esc(row.tipo)}</td>
-          <td>${esc(row.inizio)}</td>
-          <td>${esc(row.fine)}</td>
-        </tr>
-      `).join("");
-
-      $("partecipantiBody").innerHTML = state.partecipanti.map((row) => `
-        <tr>
-          <td>${esc(row.nome)}</td>
-          <td>${esc(row.qualifica)}</td>
-          <td>${esc(row.data)}</td>
-        </tr>
-      `).join("");
-
+    const state = { attivita: [], partecipanti: [] };
+    const $ = id => document.getElementById(id);
+    function toast(message){ const el=$("toast"); el.textContent=message; el.style.display="block"; setTimeout(()=>el.style.display="none",2600); }
+    function value(id){ return ($(id).value||"").trim(); }
+    function esc(text){ return String(text||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+    function formatDate(inputValue){ if(!inputValue) return ""; const parts=inputValue.split("-"); if(parts.length!==3) return inputValue; return `${parts[2]}/${parts[1]}/${parts[0]}`; }
+    function cleanFilePart(text,fallback){ const cleaned=String(text||fallback).trim().replace(/[<>:"/\\|?*]+/g,"-").replace(/\s+/g,"_"); return cleaned||fallback; }
+    function fileName(){ const today=new Date().toISOString().slice(0,10); const specialist=cleanFilePart(value("istruttore"),"Application_Specialist"); const project=cleanFilePart(value("project"),"Project"); return `${specialist}_${project}_${today}.pdf`; }
+    function subject(){ const specialist=value("istruttore")||"Application Specialist non indicato"; const serial=value("serial")||"Serial Number non indicato"; return `Rapporto Formazione Philips - ${specialist} - SN ${serial}`; }
+    function refreshTables(){
+      $("attivitaBody").innerHTML = state.attivita.map(row=>`<tr><td>${esc(row.tipo)}</td><td>${esc(row.inizio)}</td><td>${esc(row.fine)}</td></tr>`).join("");
+      $("partecipantiBody").innerHTML = state.partecipanti.map(row=>`<tr><td>${esc(row.nome)}</td><td>${esc(row.qualifica)}</td><td>${esc(row.data)}</td></tr>`).join("");
       $("nomeFile").textContent = `Nome PDF: ${fileName()}`;
     }
-
-    function setActiveTab(tabId) {
-      const target = $(tabId);
-      if (!target) return;
-
-      document.querySelectorAll("nav button").forEach((button) => {
-        const isActive = button.dataset.tab === tabId;
-        button.classList.toggle("active", isActive);
-        button.setAttribute("aria-pressed", isActive ? "true" : "false");
-      });
-
-      document.querySelectorAll("main section").forEach((section) => {
-        section.classList.toggle("active", section.id === tabId);
-      });
+    function setActiveTab(tabId){
+      document.querySelectorAll("nav button").forEach(btn=>{ const isActive = btn.dataset.tab === tabId; btn.classList.toggle("active", isActive); btn.setAttribute("aria-pressed", isActive?"true":"false"); });
+      document.querySelectorAll("main section").forEach(section=>section.classList.toggle("active", section.id===tabId));
     }
+    document.querySelector("nav").addEventListener("click", (event)=>{ const button=event.target.closest("button[data-tab]"); if(!button) return; setActiveTab(button.dataset.tab); });
 
-    document.querySelector("nav").addEventListener("click", (event) => {
-      const button = event.target.closest("button[data-tab]");
-      if (!button) return;
-      setActiveTab(button.dataset.tab);
-    });
-
-    $("addAttivita").addEventListener("click", () => {
+    $("addAttivita").addEventListener("click", ()=> {
       const data = formatDate(value("dataAttivita"));
-      if (!data) {
-        toast("Seleziona la data dell'attivita.");
-        return;
-      }
-      state.attivita.push({
-        tipo: value("tipoAttivita"),
-        inizio: `${data} ${value("oraInizio")}`,
-        fine: `${data} ${value("oraFine")}`
-      });
-      $("dataAttivita").value = "";
-      refreshTables();
+      if(!data){ toast("Seleziona la data dell'attivita."); return; }
+      state.attivita.push({ tipo: value("tipoAttivita"), inizio: `${data} ${value("oraInizio")}`, fine: `${data} ${value("oraFine")}` });
+      $("dataAttivita").value=""; refreshTables();
     });
+    $("clearAttivita").addEventListener("click", ()=>{ state.attivita = []; refreshTables(); });
 
-    $("clearAttivita").addEventListener("click", () => {
-      state.attivita = [];
-      refreshTables();
-    });
-
-    $("addPartecipante").addEventListener("click", () => {
+    $("addPartecipante").addEventListener("click", ()=> {
       const nome = value("nomePartecipante").toUpperCase();
-      if (!nome) {
-        toast("Inserisci il nome del partecipante.");
-        return;
-      }
-      state.partecipanti.push({
-        nome,
-        qualifica: value("qualifica"),
-        data: formatDate(value("dataPartecipante"))
-      });
-      $("nomePartecipante").value = "";
-      $("qualifica").value = "";
-      $("dataPartecipante").value = "";
-      refreshTables();
+      if(!nome){ toast("Inserisci il nome del partecipante."); return; }
+      state.partecipanti.push({ nome, qualifica: value("qualifica"), data: formatDate(value("dataPartecipante")) });
+      $("nomePartecipante").value=""; $("qualifica").value=""; $("dataPartecipante").value=""; refreshTables();
     });
+    $("clearPartecipanti").addEventListener("click", ()=>{ state.partecipanti = []; refreshTables(); });
 
-    $("clearPartecipanti").addEventListener("click", () => {
-      state.partecipanti = [];
-      refreshTables();
-    });
-
-    // setupCanvas version robusta (gestione devicePixelRatio, pointer events, cancellazione)
+    // Robust setupCanvas con logging
     function setupCanvas(id) {
       const canvas = $(id);
       const ctx = canvas.getContext("2d");
@@ -702,44 +225,39 @@
       function resize() {
         const rect = canvas.getBoundingClientRect();
         const ratio = window.devicePixelRatio || 1;
-        // salva immagine se presente
         let data = null;
-        try { data = canvas.toDataURL(); } catch (e) { data = null; }
-        // imposta dimensione reale in pixel
+        try { data = canvas.toDataURL(); } catch(e){ data = null; }
         canvas.width = Math.max(1, Math.floor(rect.width * ratio));
         canvas.height = Math.max(1, Math.floor(rect.height * ratio));
-        // usa trasformazione per lavorare in CSS pixels
         ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
-        // sfondo bianco
         ctx.fillStyle = "#fff";
         ctx.fillRect(0, 0, rect.width, rect.height);
-        // ripristina immagine se presente
         if (data && data.length > 100) {
           const img = new Image();
           img.onload = () => {
-            try { ctx.drawImage(img, 0, 0, rect.width, rect.height); } catch (e) {}
+            try { ctx.drawImage(img, 0, 0, rect.width, rect.height); } catch(e){}
           };
           img.src = data;
         }
       }
 
-      function point(event) {
+      function getPos(event) {
         const rect = canvas.getBoundingClientRect();
-        return {
-          x: event.clientX - rect.left,
-          y: event.clientY - rect.top
-        };
+        return { x: event.clientX - rect.left, y: event.clientY - rect.top };
       }
 
-      function start(event) {
+      function start(ev) {
+        ev.preventDefault();
         drawing = true;
-        last = point(event);
-        try { canvas.setPointerCapture(event.pointerId); } catch (e) {}
+        last = getPos(ev);
+        try { canvas.setPointerCapture(ev.pointerId); } catch(e){}
+        console.log(id + " pointerdown", last);
       }
 
-      function draw(event) {
-        if (!drawing || !last) return;
-        const next = point(event);
+      function move(ev) {
+        ev.preventDefault();
+        if(!drawing || !last) return;
+        const next = getPos(ev);
         ctx.strokeStyle = "#000";
         ctx.lineWidth = 3;
         ctx.lineCap = "round";
@@ -749,25 +267,27 @@
         ctx.lineTo(next.x, next.y);
         ctx.stroke();
         last = next;
+        console.log(id + " draw", next);
       }
 
-      function stop(event) {
+      function stop(ev) {
+        ev.preventDefault();
         drawing = false;
         last = null;
-        try { canvas.releasePointerCapture(event.pointerId); } catch (e) {}
+        try { canvas.releasePointerCapture(ev.pointerId); } catch(e){}
+        console.log(id + " pointerup");
+        try { console.log(id + " dataURL len:", canvas.toDataURL().length); } catch(e){}
       }
 
-      // listener pointer (supporta mouse, touch e pen)
-      canvas.addEventListener("pointerdown", start);
-      canvas.addEventListener("pointermove", draw);
+      canvas.addEventListener("pointerdown", start, { passive: false });
+      canvas.addEventListener("pointermove", move, { passive: false });
       canvas.addEventListener("pointerup", stop);
       canvas.addEventListener("pointercancel", stop);
       canvas.addEventListener("pointerout", stop);
 
-      // assicurati che il canvas non sia scorrevole su touch
       canvas.style.touchAction = "none";
+      canvas.style.zIndex = 1;
 
-      // inizializza e ridimensiona
       resize();
       window.addEventListener("resize", resize);
     }
@@ -775,36 +295,28 @@
     setupCanvas("firmaIstruttore");
     setupCanvas("firmaCliente");
 
-    // migliorata cancellazione: usa dimensione reale e gestisce transform
     document.querySelectorAll("[data-clear]").forEach((button) => {
       button.addEventListener("click", () => {
         const canvas = $(button.dataset.clear);
         const ctx = canvas.getContext("2d");
-        // Reset transform e cancella usando pixel reali
-        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.setTransform(1,0,0,1,0,0);
         ctx.fillStyle = "#fff";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        // Imposta nuovamente transform per devicePixelRatio in modo coerente con resize
+        ctx.fillRect(0,0,canvas.width,canvas.height);
         const ratio = window.devicePixelRatio || 1;
-        ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+        ctx.setTransform(ratio,0,0,ratio,0,0);
       });
     });
 
     function signatureImage(id) {
-      try {
-        return $(id).toDataURL("image/png");
-      } catch (e) {
-        return "";
-      }
+      try { return $(id).toDataURL("image/png"); } catch(e) { return ""; }
     }
 
-    function buildPrint() {
+    function buildPrint(){
       const checks = [
         [$("chk1").checked, "Consegnato Programma di Formazione"],
         [$("chk2").checked, "Illustrata la documentazione d'Uso del sistema"],
         [$("chk3").checked, "Eseguita formazione specifica alle tematiche di Sicurezza"]
       ];
-
       $("printArea").innerHTML = `
         <div class="print-title">PHILIPS</div>
         <div class="print-heading">RAPPORTO INTERVENTO / FORMAZIONE APPLICATIVA</div>
@@ -814,61 +326,27 @@
           <div class="print-cell"><div class="print-label">SISTEMA / MODELLO</div>${esc(value("sistema"))}</div>
           <div class="print-cell"><div class="print-label">TECH ID / SERIAL NUMBER</div>${esc(value("serial"))}</div>
         </div>
-
         <div class="print-heading">DETTAGLI ATTIVITA DI TRAINING GIORNALIERE</div>
-        <table class="print-table">
-          <thead><tr><th>Descrizione Attivita</th><th>Data/Ora Inizio</th><th>Data/Ora Fine</th></tr></thead>
-          <tbody>${state.attivita.map((row) => `<tr><td>${esc(row.tipo)}</td><td>${esc(row.inizio)}</td><td>${esc(row.fine)}</td></tr>`).join("")}</tbody>
-        </table>
-
+        <table class="print-table"><thead><tr><th>Descrizione Attivita</th><th>Data/Ora Inizio</th><th>Data/Ora Fine</th></tr></thead>
+        <tbody>${state.attivita.map((row)=>`<tr><td>${esc(row.tipo)}</td><td>${esc(row.inizio)}</td><td>${esc(row.fine)}</td></tr>`).join("")}</tbody></table>
         <div class="print-heading">NOTE / DESCRIZIONE DELLE ATTIVITA</div>
-        <div class="print-cell" style="border:1px solid #000; min-height:70px">${esc(value("note")).replace(/\n/g, "<br>")}</div>
-
-        <div style="margin-top:10px">${checks.map(([ok, text]) => `<div>[${ok ? "X" : " "}] ${esc(text)}</div>`).join("")}</div>
-
+        <div class="print-cell" style="border:1px solid #000; min-height:70px">${esc(value("note")).replace(/\n/g,"<br>")}</div>
+        <div style="margin-top:10px">${checks.map(([ok,text])=>`<div>[${ok?"X":" "}] ${esc(text)}</div>`).join("")}</div>
         <div class="print-heading">ELENCO PARTECIPANTI E SOTTOSCRIZIONE</div>
-        <table class="print-table">
-          <thead><tr><th>NOME COGNOME</th><th>QUALIFICA</th><th>DATA</th></tr></thead>
-          <tbody>${state.partecipanti.map((row) => `<tr><td>${esc(row.nome)}</td><td>${esc(row.qualifica)}</td><td>${esc(row.data)}</td></tr>`).join("")}</tbody>
-        </table>
-
+        <table class="print-table"><thead><tr><th>NOME COGNOME</th><th>QUALIFICA</th><th>DATA</th></tr></thead>
+        <tbody>${state.partecipanti.map(row=>`<tr><td>${esc(row.nome)}</td><td>${esc(row.qualifica)}</td><td>${esc(row.data)}</td></tr>`).join("")}</tbody></table>
         <div class="print-signatures">
-          <div class="print-signature">
-            <div class="print-label">CLINICAL APPLICATION SPECIALIST</div>
-            <div>${esc(value("istruttore"))}</div>
-            <img src="${signatureImage("firmaIstruttore")}" alt="">
-          </div>
-          <div class="print-signature">
-            <div class="print-label">FIRMA PER ACCETTAZIONE CLIENTE</div>
-            <div>${esc(value("respCliente"))}</div>
-            <img src="${signatureImage("firmaCliente")}" alt="">
-          </div>
+          <div class="print-signature"><div class="print-label">CLINICAL APPLICATION SPECIALIST</div><div>${esc(value("istruttore"))}</div><img src="${signatureImage("firmaIstruttore")}" alt=""></div>
+          <div class="print-signature"><div class="print-label">FIRMA PER ACCETTAZIONE CLIENTE</div><div>${esc(value("respCliente"))}</div><img src="${signatureImage("firmaCliente")}" alt=""></div>
         </div>
       `;
     }
 
-    $("generaPdf").addEventListener("click", () => {
-      $("nomeFile").textContent = `Nome PDF: ${fileName()}`;
-      buildPrint();
-      window.print();
-    });
+    $("generaPdf").addEventListener("click", ()=>{ $("nomeFile").textContent = `Nome PDF: ${fileName()}`; buildPrint(); window.print(); });
+    $("preparaEmail").addEventListener("click", ()=>{ const body="Buongiorno,%0D%0A%0D%0Ain allegato si trasmette il Rapporto di Formazione in formato PDF.%0D%0A%0D%0ACordiali saluti."; const url=`mailto:${encodeURIComponent(value("mailA"))}?subject=${encodeURIComponent(subject())}&body=${body}`; window.location.href = url; });
 
-    $("preparaEmail").addEventListener("click", () => {
-      const body = "Buongiorno,%0D%0A%0D%0Ain allegato si trasmette il Rapporto di Formazione in formato PDF.%0D%0A%0D%0ACordiali saluti.";
-      const url = `mailto:${encodeURIComponent(value("mailA"))}?subject=${encodeURIComponent(subject())}&body=${body}`;
-      window.location.href = url;
-    });
-
-    ["istruttore", "project"].forEach((id) => {
-      $(id).addEventListener("input", refreshTables);
-    });
-
-    if ("serviceWorker" in navigator) {
-      window.addEventListener("load", () => {
-        navigator.serviceWorker.register("service-worker.js").catch(() => {});
-      });
-    }
-
+    ["istruttore","project"].forEach(id=>$(id).addEventListener("input", refreshTables));
+    if("serviceWorker" in navigator){ window.addEventListener("load", ()=>{ navigator.serviceWorker.register("service-worker.js").catch(()=>{}); }); }
     refreshTables();
   </script>
 </body>
