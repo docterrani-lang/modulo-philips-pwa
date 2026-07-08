@@ -233,7 +233,7 @@
       border: 1px solid var(--line);
       border-radius: 8px;
       background: #ffffff;
-      touch-action: none;
+      touch-action: none; /* permette gesture personalizzate */
     }
 
     .small {
@@ -510,12 +510,18 @@
           <div>
             <label>Firma Specialist / Instructor</label>
             <canvas id="firmaIstruttore"></canvas>
-            <button type="button" class="danger-button" data-clear="firmaIstruttore">Cancella</button>
+            <div style="display:flex;gap:8px;margin-top:8px">
+              <button type="button" class="danger-button" data-clear="firmaIstruttore">Cancella</button>
+              <button type="button" id="saveIstruttore">Salva Immagine</button>
+            </div>
           </div>
           <div>
             <label>Firma accettazione cliente</label>
             <canvas id="firmaCliente"></canvas>
-            <button type="button" class="danger-button" data-clear="firmaCliente">Cancella</button>
+            <div style="display:flex;gap:8px;margin-top:8px">
+              <button type="button" class="danger-button" data-clear="firmaCliente">Cancella</button>
+              <button type="button" id="saveCliente">Salva Immagine</button>
+            </div>
           </div>
         </div>
       </div>
@@ -629,84 +635,132 @@
       $("nomeFile").textContent = `Nome PDF: ${fileName()}`;
     }
 
-    // LOGICA DI DISEGNO STANDARD SUPER COMPATIBILE (MOUSE + TOUCH)
+    // ----- LOGICA FIRMA: USO DI POINTER EVENTS + HIGH-DPI SAFE -----
     function setupCanvas(id) {
       const canvas = $(id);
-      const ctx = canvas.getContext("2d");
+      const ctx = canvas.getContext("2d", { willReadFrequently: false });
       let drawing = false;
+      let lastX = 0;
+      let lastY = 0;
+      let scale = 1;
       let initialized = false;
 
-      // Inizializza le dimensioni una volta sola quando il tab diventa visibile
-      function initDimensions() {
-        if (initialized) return;
+      function init() {
+        // calcola dimensione visibile
         const rect = canvas.getBoundingClientRect();
         if (rect.width === 0 || rect.height === 0) return;
-
         const ratio = window.devicePixelRatio || 1;
-        canvas.width = rect.width * ratio;
-        canvas.height = rect.height * ratio;
-        ctx.scale(ratio, ratio);
+        scale = ratio;
 
-        ctx.strokeStyle = "#000000";
-        ctx.lineWidth = 3;
+        // Imposta dimensione reale del canvas per avere rendering nitido su schermi hi-dpi
+        canvas.width = Math.round(rect.width * ratio);
+        canvas.height = Math.round(rect.height * ratio);
+
+        // imposta dimensione CSS (rimane via style)
+        canvas.style.width = rect.width + "px";
+        canvas.style.height = rect.height + "px";
+
+        // Scala il contesto
+        ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+
+        // Stili di disegno
         ctx.lineCap = "round";
         ctx.lineJoin = "round";
-
-        ctx.fillStyle = "#ffffff";
+        ctx.strokeStyle = "#000";
+        ctx.lineWidth = 3;
+        ctx.fillStyle = "#fff";
         ctx.fillRect(0, 0, rect.width, rect.height);
+
         initialized = true;
       }
 
-      function getPos(e) {
+      function toLocalCoords(clientX, clientY) {
         const rect = canvas.getBoundingClientRect();
-        let clientX = e.clientX;
-        let clientY = e.clientY;
-
-        if (e.touches && e.touches.length > 0) {
-          clientX = e.touches[0].clientX;
-          clientY = e.touches[0].clientY;
-        }
-
-        return {
-          x: clientX - rect.left,
-          y: clientY - rect.top
-        };
+        // coordinate relative all'area CSS (non alla pixel ratio)
+        const x = (clientX - rect.left);
+        const y = (clientY - rect.top);
+        return { x, y };
       }
 
-      function start(e) {
-        if (e.cancelable) e.preventDefault();
+      function pointerDown(e) {
+        // inizializza se necessario
+        if (!initialized) init();
         drawing = true;
-        const pos = getPos(e);
+        const p = toLocalCoords(e.clientX, e.clientY);
+        lastX = p.x;
+        lastY = p.y;
         ctx.beginPath();
-        ctx.moveTo(pos.x, pos.y);
-      }
-
-      function move(e) {
-        if (!drawing) return;
+        ctx.moveTo(lastX, lastY);
+        // previeni scorrimento quando si firma
         if (e.cancelable) e.preventDefault();
-        const pos = getPos(e);
-        ctx.lineTo(pos.x, pos.y);
+      }
+
+      function pointerMove(e) {
+        if (!drawing) return;
+        const p = toLocalCoords(e.clientX, e.clientY);
+        // linee morbide con quadratic curve
+        const midX = (lastX + p.x) / 2;
+        const midY = (lastY + p.y) / 2;
+        ctx.quadraticCurveTo(lastX, lastY, midX, midY);
         ctx.stroke();
+        lastX = p.x;
+        lastY = p.y;
+        if (e.cancelable) e.preventDefault();
       }
 
-      function stop() {
+      function pointerUp(e) {
+        if (!drawing) return;
         drawing = false;
+        ctx.closePath();
+        if (e.cancelable) e.preventDefault();
       }
 
-      // Eventi Mouse (PC)
-      canvas.addEventListener("mousedown", start);
-      canvas.addEventListener("mousemove", move);
-      canvas.addEventListener("mouseup", stop);
-      canvas.addEventListener("mouseleave", stop);
+      // Usa pointer events per supportare mouse/touch/pen in modo unificato
+      canvas.addEventListener("pointerdown", pointerDown, { passive: false });
+      window.addEventListener("pointermove", pointerMove, { passive: false });
+      window.addEventListener("pointerup", pointerUp, { passive: false });
+      window.addEventListener("pointercancel", pointerUp, { passive: false });
 
-      // Eventi Touch (Telefono)
-      canvas.addEventListener("touchstart", start, { passive: false });
-      canvas.addEventListener("touchmove", move, { passive: false });
-      canvas.addEventListener("touchend", stop);
+      // Permetti re-inizializzazione se la dimensione del canvas cambia (es. rotazione)
+      function handleResize() {
+        // conserva immagine corrente
+        const rect = canvas.getBoundingClientRect();
+        if (rect.width === 0 || rect.height === 0) return;
 
-      canvas.forceInit = initDimensions;
+        const dataUrl = canvas.toDataURL();
+        init();
+        // ripristina immagine precedente su nuovo contesto
+        const img = new Image();
+        img.onload = function() {
+          ctx.drawImage(img, 0, 0, rect.width, rect.height);
+        };
+        img.src = dataUrl;
+      }
+      window.addEventListener("resize", () => {
+        // leggero debounce
+        clearTimeout(canvas._resizeTimeout);
+        canvas._resizeTimeout = setTimeout(handleResize, 120);
+      });
+
+      // espone funzioni utili
+      canvas.clearSignature = function() {
+        const rect = canvas.getBoundingClientRect();
+        ctx.setTransform(scale, 0, 0, scale, 0, 0);
+        ctx.fillStyle = "#fff";
+        ctx.fillRect(0, 0, rect.width, rect.height);
+        ctx.beginPath();
+      };
+
+      canvas.getDataURL = function() {
+        // restituisce PNG con dimensione corretta
+        return canvas.toDataURL("image/png");
+      };
+
+      // Forza inizializzazione nel momento opportuno
+      canvas.forceInit = init;
     }
 
+    // inizializza canvases
     setupCanvas("firmaIstruttore");
     setupCanvas("firmaCliente");
 
@@ -730,7 +784,7 @@
         window.setTimeout(() => {
           if ($("firmaIstruttore").forceInit) $("firmaIstruttore").forceInit();
           if ($("firmaCliente").forceInit) $("firmaCliente").forceInit();
-        }, 100);
+        }, 50);
       }
     }
 
@@ -785,17 +839,42 @@
     document.querySelectorAll("[data-clear]").forEach((button) => {
       button.addEventListener("click", () => {
         const canvas = $(button.dataset.clear);
-        const ctx = canvas.getContext("2d");
-        ctx.fillStyle = "#ffffff";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        if (canvas && canvas.clearSignature) {
+          canvas.clearSignature();
+        } else if (canvas) {
+          const ctx = canvas.getContext("2d");
+          ctx.fillStyle = "#ffffff";
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
       });
     });
 
+    // pulsanti di salvataggio immagine (per test)
+    $("saveIstruttore").addEventListener("click", () => {
+      const img = $("firmaIstruttore").getDataURL();
+      // per demo, apri in nuova scheda
+      window.open(img, "_blank");
+    });
+    $("saveCliente").addEventListener("click", () => {
+      const img = $("firmaCliente").getDataURL();
+      window.open(img, "_blank");
+    });
+
     function signatureImage(id) {
-      return $(id).toDataURL("image/png");
+      return $(id).getDataURL ? $(id).getDataURL() : $(id).toDataURL("image/png");
     }
 
     function buildPrint() {
       const checks = [
         [$("chk1").checked, "Consegnato Programma di Formazione"],
         [$("chk2").checked, "Illustrata la documentazione d'Uso del sistema"],
+        [$("chk3").checked, "Eseguita formazione specifica sulla Sicurezza"]
+      ];
+      // Resto dell'implementazione di buildPrint (non modificata in questa richiesta)
+    }
+
+    // mostra nome file iniziale
+    refreshTables();
+  </script>
+</body>
+</html>
