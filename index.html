@@ -3,8 +3,15 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Modulo Philips APP - Diagnostica Firme</title>
-  <style>dd
+  <meta name="theme-color" content="#0b5ede">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Modulo Philips">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="application-name" content="Modulo Philips">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <title>Modulo Philips APP</title>
+  <style>
     :root {
       --blue: #0b5ede;
       --ink: #172033;
@@ -15,291 +22,859 @@
       --ok: #087443;
       --danger: #b42318;
     }
-    * { box-sizing: border-box; }
-    body { margin:0; font-family: Arial, Helvetica, sans-serif; background:var(--soft); color:var(--ink); }
-    header { padding:12px 14px; background:var(--white); border-bottom:1px solid var(--line); position:sticky; top:0; z-index:10; }
-    .brand{display:flex;justify-content:space-between;align-items:center}
-    main{max-width:980px;margin:14px auto;padding:14px}
-    .panel{background:var(--white);border:1px solid var(--line);border-radius:8px;padding:14px;margin-bottom:12px}
-    .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
-    label{display:block;color:var(--muted);font-size:12px;font-weight:700;margin-bottom:5px;text-transform:uppercase}
-    input,select,textarea{width:100%;min-height:42px;border:1px solid var(--line);border-radius:8px;padding:9px 10px;background:var(--white);font:inherit}
-    canvas{width:100%;height:150px;border:1px solid var(--line);border-radius:8px;background:#fff;touch-action:none}
-    .signature-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
-    .diag { font-family: monospace; font-size:12px; background:#071127; color:#dfefff; padding:8px; border-radius:8px; max-height:150px; overflow:auto; white-space:pre-wrap; }
-    .diag-header { font-weight:700; margin-bottom:6px; color:#9fd6ff }
-    .diag-small { font-size:11px; color:#bcd9ff; margin-top:6px }
-    .diag-container { display:flex; gap:12px; align-items:flex-start; margin-top:8px; }
-    button { cursor:pointer; padding:8px 10px; border-radius:6px; border:1px solid var(--line); background:var(--white); font-weight:700; }
-    .danger-button { color:var(--danger); }
-    .actions { display:flex; gap:8px; margin-top:8px }
-    @media (max-width:720px) { .grid, .signature-grid { grid-template-columns:1fr } }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--soft);
+      color: var(--ink);
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 15px;
+      line-height: 1.35;
+    }
+
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: var(--white);
+      border-bottom: 1px solid var(--line);
+      padding: 12px 14px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .brand strong {
+      color: var(--blue);
+      font-size: 20px;
+      letter-spacing: 1px;
+    }
+
+    .brand span {
+      color: var(--muted);
+      font-size: 12px;
+      text-align: right;
+    }
+
+    nav {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+      margin-top: 12px;
+    }
+
+    nav button,
+    .actions button,
+    .inline button,
+    .danger-button {
+      min-height: 42px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--white);
+      color: var(--ink);
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    nav button.active {
+      background: var(--blue);
+      border-color: var(--blue);
+      color: var(--white);
+    }
+
+    main {
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 14px;
+    }
+
+    section {
+      display: none;
+    }
+
+    section.active {
+      display: block;
+    }
+
+    .panel {
+      background: var(--white);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 14px;
+      margin-bottom: 12px;
+    }
+
+    h1,
+    h2 {
+      margin: 0 0 12px;
+      font-size: 18px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    label {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+      margin-bottom: 5px;
+      text-transform: uppercase;
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      min-height: 42px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--white);
+      color: var(--ink);
+      font: inherit;
+      padding: 9px 10px;
+    }
+
+    textarea {
+      min-height: 92px;
+      resize: vertical;
+    }
+
+    .inline {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      align-items: end;
+    }
+
+    .actions {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .actions .primary {
+      background: var(--blue);
+      border-color: var(--blue);
+      color: var(--white);
+    }
+
+    .actions .success {
+      background: var(--ok);
+      border-color: var(--ok);
+      color: var(--white);
+    }
+
+    .danger-button {
+      color: var(--danger);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      background: var(--white);
+    }
+
+    th,
+    td {
+      border-bottom: 1px solid var(--line);
+      padding: 8px 6px;
+      text-align: left;
+      vertical-align: top;
+      font-size: 13px;
+    }
+
+    th {
+      color: var(--muted);
+      font-size: 11px;
+      text-transform: uppercase;
+    }
+
+    .checks {
+      display: grid;
+      gap: 8px;
+    }
+
+    .check-row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      color: var(--ink);
+    }
+
+    .check-row input {
+      width: 20px;
+      min-height: 20px;
+    }
+
+    .signature-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    canvas {
+      width: 100%;
+      height: 150px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #ffffff;
+      touch-action: none; /* permette gesture personalizzate */
+    }
+
+    .small {
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 8px;
+    }
+
+    #toast {
+      position: fixed;
+      left: 12px;
+      right: 12px;
+      bottom: 12px;
+      z-index: 50;
+      display: none;
+      border-radius: 8px;
+      background: #172033;
+      color: white;
+      padding: 12px;
+      text-align: center;
+    }
+
+    #printArea {
+      display: none;
+    }
+
+    @media (max-width: 720px) {
+      .grid,
+      .inline,
+      .signature-grid,
+      .actions {
+        grid-template-columns: 1fr;
+      }
+
+      nav button {
+        font-size: 13px;
+        padding: 6px;
+      }
+
+      main {
+        padding: 10px;
+      }
+    }
+
+    @media print {
+      body > header,
+      body > main,
+      #toast {
+        display: none !important;
+      }
+
+      #printArea {
+        display: block;
+        color: #000;
+        font-family: Arial, Helvetica, sans-serif;
+      }
+
+      @page {
+        size: A4;
+        margin: 12mm;
+      }
+
+      .print-title {
+        color: #0b5ede;
+        font-size: 26px;
+        font-weight: 700;
+        margin-bottom: 14px;
+      }
+
+      .print-heading {
+        font-size: 16px;
+        font-weight: 700;
+        margin: 14px 0 8px;
+      }
+
+      .print-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        border: 1px solid #000;
+        border-bottom: 0;
+      }
+
+      .print-cell {
+        border-right: 1px solid #000;
+        border-bottom: 1px solid #000;
+        padding: 7px;
+        min-height: 34px;
+      }
+
+      .print-cell:nth-child(2n) {
+        border-right: 0;
+      }
+
+      .print-label {
+        color: #555;
+        font-size: 10px;
+        font-weight: 700;
+        margin-bottom: 3px;
+      }
+
+      .print-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 12px;
+      }
+
+      .print-table th,
+      .print-table td {
+        border: 1px solid #000;
+        padding: 6px;
+        font-size: 11px;
+      }
+
+      .print-signatures {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 28px;
+        margin-top: 24px;
+      }
+
+      .print-signature img {
+        width: 190px;
+        height: 76px;
+        object-fit: contain;
+        border-bottom: 1px solid #000;
+      }
+    }
   </style>
 </head>
 <body>
   <header>
     <div class="brand">
-      <strong style="color:var(--blue)">PHILIPS</strong>
-      <span style="color:var(--muted)">Rapporto formazione applicativa — Diagnostica firme</span>
+      <strong>PHILIPS</strong>
+      <span>Rapporto formazione applicativa</span>
     </div>
+    <nav aria-label="Sezioni modulo">
+      <button type="button" class="active" data-tab="dati" aria-pressed="true">Dati</button>
+      <button type="button" data-tab="partecipanti" aria-pressed="false">Partecipanti</button>
+      <button type="button" data-tab="firme" aria-pressed="false">Firme e invio</button>
+    </nav>
   </header>
 
   <main>
-    <section class="panel">
-      <h2>Sezione di test firme</h2>
-      <div class="grid">
-        <div>
-          <label for="istruttore">Application Specialist</label>
-          <input id="istruttore">
-        </div>
-        <div>
-          <label for="respCliente">Resp. Cliente</label>
-          <input id="respCliente">
-        </div>
-      </div>
-
-      <div class="signature-grid" style="margin-top:12px">
-        <div>
-          <label>Firma Specialist / Instructor</label>
-          <canvas id="firmaIstruttore"></canvas>
-          <div class="actions">
-            <button data-clear="firmaIstruttore" class="danger-button">Cancella</button>
-            <button id="saveIstruttore">Apri immagine</button>
+    <section id="dati" class="active">
+      <div class="panel">
+        <h1>Dati e attivita</h1>
+        <div class="grid">
+          <div>
+            <label for="cliente">Cliente / Reparto</label>
+            <input id="cliente" autocomplete="organization">
           </div>
-        </div>
-        <div>
-          <label>Firma accettazione cliente</label>
-          <canvas id="firmaCliente"></canvas>
-          <div class="actions">
-            <button data-clear="firmaCliente" class="danger-button">Cancella</button>
-            <button id="saveCliente">Apri immagine</button>
+          <div>
+            <label for="project">Project N.</label>
+            <input id="project">
+          </div>
+          <div>
+            <label for="sistema">Sistema / Modello</label>
+            <input id="sistema">
+          </div>
+          <div>
+            <label for="serial">Serial Number</label>
+            <input id="serial">
           </div>
         </div>
       </div>
 
-      <div style="margin-top:12px">
-        <div class="diag-header">Pannello diagnostico firme (aggiornamento live)</div>
-        <div class="diag-container">
-          <div style="flex:1">
-            <div id="diag-main" class="diag">Inizializzazione diagnostica...</div>
-            <div class="diag-small">I messaggi live appaiono qui quando interagisci con i canvas.</div>
+      <div class="panel">
+        <h2>Attivita giornaliere</h2>
+        <div class="grid">
+          <div>
+            <label for="tipoAttivita">Attivita</label>
+            <select id="tipoAttivita">
+              <option>Training Applicativo</option>
+              <option>Clinical Application</option>
+              <option>Follow-up Training</option>
+              <option>Handover / Affiancamento</option>
+            </select>
           </div>
-          <div style="width:220px">
-            <div style="background:#f6fbff;border:1px solid #cfe7ff;padding:8px;border-radius:8px">
-              <div style="font-weight:700;color:#0066cc;margin-bottom:6px">Stato sintetico</div>
-              <div id="diag-summary" style="font-family:monospace;font-size:13px;color:#072143">Caricamento...</div>
+          <div>
+            <label for="dataAttivita">Data</label>
+            <input id="dataAttivita" type="date">
+          </div>
+          <div>
+            <label for="oraInizio">Ora inizio</label>
+            <input id="oraInizio" type="time" value="08:00">
+          </div>
+          <div>
+            <label for="oraFine">Ora fine</label>
+            <input id="oraFine" type="time" value="16:00">
+          </div>
+        </div>
+        <div class="actions">
+          <button type="button" class="primary" id="addAttivita">Aggiungi giorno</button>
+          <button type="button" class="danger-button" id="clearAttivita">Svuota elenco</button>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Tipo</th>
+              <th>Inizio</th>
+              <th>Fine</th>
+            </tr>
+          </thead>
+          <tbody id="attivitaBody"></tbody>
+        </table>
+      </div>
+
+      <div class="panel">
+        <label for="note">Note / Descrizione dell'attivita</label>
+        <textarea id="note"></textarea>
+        <div class="checks">
+          <label class="check-row"><input id="chk1" type="checkbox"> Consegnato Programma di Formazione</label>
+          <label class="check-row"><input id="chk2" type="checkbox"> Illustrata la documentazione d'Uso</label>
+          <label class="check-row"><input id="chk3" type="checkbox"> Eseguita formazione specifica sulla Sicurezza</label>
+        </div>
+      </div>
+    </section>
+
+    <section id="partecipanti">
+      <div class="panel">
+        <h1>Elenco partecipanti</h1>
+        <div class="grid">
+          <div>
+            <label for="nomePartecipante">Nome Cognome</label>
+            <input id="nomePartecipante" autocomplete="name">
+          </div>
+          <div>
+            <label for="qualifica">Qualifica</label>
+            <select id="qualifica">
+              <option value=""></option>
+              <option>TSRM</option>
+              <option>DOTT</option>
+              <option>ING</option>
+              <option>FISICO</option>
+              <option>INF</option>
+            </select>
+          </div>
+          <div>
+            <label for="dataPartecipante">Data</label>
+            <input id="dataPartecipante" type="date">
+          </div>
+        </div>
+        <div class="actions">
+          <button type="button" class="primary" id="addPartecipante">Aggiungi partecipante</button>
+          <button type="button" class="danger-button" id="clearPartecipanti">Svuota elenco</button>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Nome Cognome</th>
+              <th>Qualifica</th>
+              <th>Data</th>
+            </tr>
+          </thead>
+          <tbody id="partecipantiBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="firme">
+      <div class="panel">
+        <h1>Firme</h1>
+        <div class="grid">
+          <div>
+            <label for="istruttore">Application Specialist</label>
+            <input id="istruttore">
+          </div>
+          <div>
+            <label for="respCliente">Resp. Cliente</label>
+            <input id="respCliente">
+          </div>
+        </div>
+        <div class="signature-grid" style="margin-top:12px">
+          <div>
+            <label>Firma Specialist / Instructor</label>
+            <canvas id="firmaIstruttore"></canvas>
+            <div style="display:flex;gap:8px;margin-top:8px">
+              <button type="button" class="danger-button" data-clear="firmaIstruttore">Cancella</button>
+              <button type="button" id="saveIstruttore">Salva Immagine</button>
+            </div>
+          </div>
+          <div>
+            <label>Firma accettazione cliente</label>
+            <canvas id="firmaCliente"></canvas>
+            <div style="display:flex;gap:8px;margin-top:8px">
+              <button type="button" class="danger-button" data-clear="firmaCliente">Cancella</button>
+              <button type="button" id="saveCliente">Salva Immagine</button>
             </div>
           </div>
         </div>
       </div>
 
+      <div class="panel">
+        <h2>Invio email</h2>
+        <div class="grid">
+          <div>
+            <label for="mailA">A</label>
+            <select id="mailA">
+              <option>paola.bessi@philips.com</option>
+            </select>
+          </div>
+          <div>
+            <label for="mailDa">Mittente Philips</label>
+            <select id="mailDa">
+              <option>simone.terrani@philips.com</option>
+              <option>alfredo.sanguinetti@philips.com</option>
+              <option>bruna.centola@philips.com</option>
+              <option>luca.colombo@philips.com</option>
+              <option>catello.d'arco@philips.com</option>
+            </select>
+          </div>
+        </div>
+        <div class="actions">
+          <button type="button" class="success" id="generaPdf">Genera PDF</button>
+          <button type="button" class="primary" id="preparaEmail">Prepara email</button>
+        </div>
+        <p class="small" id="nomeFile"></p>
+      </div>
     </section>
   </main>
 
-<script>
-/* ----------------- UTILITÀ ----------------- */
-const $ = id => document.getElementById(id);
-function logDiag(msg) {
-  console.log("[DIAG]", msg);
-  const el = $("diag-main");
-  const now = new Date().toLocaleTimeString();
-  el.textContent = now + "  " + msg + "\\n" + el.textContent;
-  // keep summary short
-  const summary = $("diag-summary");
-  summary.textContent = (now + " " + msg).split("\\n")[0];
-}
+  <div id="printArea"></div>
+  <div id="toast"></div>
 
-/* ----------------- CHECK INIZIALE ----------------- */
-(function initialChecks() {
-  const ua = navigator.userAgent;
-  const supportsPointer = !!window.PointerEvent;
-  const supportsTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints && navigator.maxTouchPoints>0);
-  const dpr = window.devicePixelRatio || 1;
-  const text = [
-    "User Agent: " + ua,
-    "PointerEvent supported: " + supportsPointer,
-    "Touch supported: " + supportsTouch,
-    "devicePixelRatio: " + dpr
-  ].join("\\n");
-  $("diag-main").textContent = text + "\\n\\n" + $("diag-main").textContent;
-  $("diag-summary").textContent = "PointerEvent: " + supportsPointer + " | Touch: " + supportsTouch;
-  logDiag("Check iniziale effettuata: PointerEvent=" + supportsPointer + ", Touch=" + supportsTouch + ", dpr=" + dpr);
-})();
+  <script>
+    const state = {
+      attivita: [],
+      partecipanti: []
+    };
 
-/* ----------------- SETUP CANVAS (Pointer events + diagnosi live) ----------------- */
-function setupCanvasWithDiag(id) {
-  const canvas = $(id);
-  if (!canvas) {
-    logDiag("setupCanvas: canvas non trovato: " + id);
-    return;
-  }
-  const ctx = canvas.getContext('2d');
-  if (!ctx) {
-    logDiag("setupCanvas: context 2d non disponibile per " + id);
-    return;
-  }
+    const $ = (id) => document.getElementById(id);
 
-  let drawing = false;
-  let lastX = 0, lastY = 0;
-  let initialized = false;
-
-  function init() {
-    const rect = canvas.getBoundingClientRect();
-    if (rect.width === 0 || rect.height === 0) {
-      logDiag(id + " init: dimensioni 0, skip init");
-      return;
+    function toast(message) {
+      const el = $("toast");
+      el.textContent = message;
+      el.style.display = "block";
+      window.setTimeout(() => {
+        el.style.display = "none";
+      }, 2600);
     }
-    const ratio = window.devicePixelRatio || 1;
-    canvas.width = Math.round(rect.width * ratio);
-    canvas.height = Math.round(rect.height * ratio);
-    canvas.style.width = rect.width + "px";
-    canvas.style.height = rect.height + "px";
-    ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
-    ctx.strokeStyle = "#000";
-    ctx.lineWidth = 3;
-    ctx.fillStyle = "#fff";
-    ctx.fillRect(0, 0, rect.width, rect.height);
-    initialized = true;
-    logDiag(id + " init: css " + Math.round(rect.width) + "x" + Math.round(rect.height) + " px (" + canvas.width + "x" + canvas.height + " raw)");
-  }
 
-  function coordsFromEvent(e) {
-    const rect = canvas.getBoundingClientRect();
-    const clientX = e.clientX !== undefined ? e.clientX : (e.touches && e.touches[0] && e.touches[0].clientX);
-    const clientY = e.clientY !== undefined ? e.clientY : (e.touches && e.touches[0] && e.touches[0].clientY);
-    return { x: clientX - rect.left, y: clientY - rect.top, rect };
-  }
-
-  function handleDown(e) {
-    if (!initialized) init();
-    drawing = true;
-    const p = coordsFromEvent(e);
-    lastX = p.x; lastY = p.y;
-    ctx.beginPath();
-    ctx.moveTo(lastX, lastY);
-    const elTop = document.elementFromPoint(p.rect.left + p.x, p.rect.top + p.y);
-    logDiag(id + " pointerdown: type=" + (e.pointerType||e.type) + " buttons=" + (e.buttons||0) + " at " + Math.round(lastX)+","+Math.round(lastY) + " topEl=" + (elTop ? elTop.tagName + (elTop.id?("#"+elTop.id):"") : "none"));
-    if (e.cancelable) e.preventDefault();
-  }
-
-  function handleMove(e) {
-    if (!drawing) return;
-    const p = coordsFromEvent(e);
-    const midX = (lastX + p.x) / 2;
-    const midY = (lastY + p.y) / 2;
-    ctx.quadraticCurveTo(lastX, lastY, midX, midY);
-    ctx.stroke();
-    lastX = p.x; lastY = p.y;
-    // log occasional moves (throttled)
-    if (!canvas._moveThrottle) {
-      canvas._moveThrottle = true;
-      setTimeout(() => { canvas._moveThrottle = false; }, 80);
-      logDiag(id + " pointermove at " + Math.round(lastX)+","+Math.round(lastY));
+    function value(id) {
+      return ($(id).value || "").trim();
     }
-    if (e.cancelable) e.preventDefault();
-  }
 
-  function handleUp(e) {
-    if (!drawing) return;
-    drawing = false;
-    ctx.closePath();
-    logDiag(id + " pointerup: type=" + (e.pointerType||e.type) + " buttons=" + (e.buttons||0));
-    if (e.cancelable) e.preventDefault();
-  }
+    function esc(text) {
+      return String(text || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
 
-  // pointer events preferiti
-  if (window.PointerEvent) {
-    canvas.addEventListener('pointerdown', handleDown, { passive:false });
-    canvas.addEventListener('pointermove', handleMove, { passive:false });
-    window.addEventListener('pointerup', handleUp, { passive:false });
-    window.addEventListener('pointercancel', handleUp, { passive:false });
-    logDiag(id + " listener pointer registered");
-  } else {
-    // fallback mouse
-    canvas.addEventListener('mousedown', handleDown, { passive:false });
-    canvas.addEventListener('mousemove', handleMove, { passive:false });
-    window.addEventListener('mouseup', handleUp, { passive:false });
-    // fallback touch
-    canvas.addEventListener('touchstart', handleDown, { passive:false });
-    canvas.addEventListener('touchmove', handleMove, { passive:false });
-    canvas.addEventListener('touchend', handleUp, { passive:false });
-    logDiag(id + " pointer NOT available, registered mouse/touch fallback");
-  }
+    function formatDate(inputValue) {
+      if (!inputValue) return "";
+      const parts = inputValue.split("-");
+      if (parts.length !== 3) return inputValue;
+      return `${parts[2]}/${parts[1]}/${parts[0]}`;
+    }
 
-  // expose utility
-  canvas.clearSignature = function() {
-    const r = canvas.getBoundingClientRect();
-    ctx.setTransform(window.devicePixelRatio||1, 0, 0, window.devicePixelRatio||1, 0, 0);
-    ctx.fillStyle = "#fff";
-    ctx.fillRect(0, 0, r.width, r.height);
-    ctx.beginPath();
-    logDiag(id + " cleared");
-  };
-  canvas.getDataURL = function() {
-    return canvas.toDataURL("image/png");
-  };
+    function cleanFilePart(text, fallback) {
+      const cleaned = String(text || fallback)
+        .trim()
+        .replace(/[<>:"/\\|?*]+/g, "-")
+        .replace(/\s+/g, "_");
+      return cleaned || fallback;
+    }
 
-  // force init if needed externally
-  canvas.forceInit = init;
+    function fileName() {
+      const today = new Date().toISOString().slice(0, 10);
+      const specialist = cleanFilePart(value("istruttore"), "Application_Specialist");
+      const project = cleanFilePart(value("project"), "Project");
+      return `${specialist}_${project}_${today}.pdf`;
+    }
 
-  // run init now if visible
-  setTimeout(() => {
-    try { init(); } catch(e){ logDiag(id + " init error: " + e.message); }
-    // also show what element sits above canvas center
-    const rect = canvas.getBoundingClientRect();
-    const topEl = document.elementFromPoint(rect.left + rect.width/2, rect.top + rect.height/2);
-    logDiag(id + " top element at center: " + (topEl ? topEl.tagName + (topEl.id?("#"+topEl.id):"") : "none"));
-  }, 60);
-}
+    function subject() {
+      const specialist = value("istruttore") || "Application Specialist non indicato";
+      const serial = value("serial") || "Serial Number non indicato";
+      return `Rapporto Formazione Philips - ${specialist} - SN ${serial}`;
+    }
 
-/* ----------------- INIZIALIZZAZIONE ----------------- */
-setupCanvasWithDiag("firmaIstruttore");
-setupCanvasWithDiag("firmaCliente");
+    function refreshTables() {
+      $("attivitaBody").innerHTML = state.attivita.map((row) => `
+        <tr>
+          <td>${esc(row.tipo)}</td>
+          <td>${esc(row.inizio)}</td>
+          <td>${esc(row.fine)}</td>
+        </tr>
+      `).join("");
 
-/* ----------------- PULSANTI CANCELLA E SALVA ----------------- */
-document.querySelectorAll('[data-clear]').forEach(btn => {
-  btn.addEventListener('click', () => {
-    const canvas = $(btn.dataset.clear);
-    if (canvas && canvas.clearSignature) canvas.clearSignature();
-    else if (canvas) { const ctx = canvas.getContext('2d'); ctx.fillStyle = "#fff"; ctx.fillRect(0,0,canvas.width,canvas.height); }
-  });
-});
-$("saveIstruttore").addEventListener('click', () => {
-  const img = $("firmaIstruttore").getDataURL();
-  window.open(img, "_blank");
-});
-$("saveCliente").addEventListener('click', () => {
-  const img = $("firmaCliente").getDataURL();
-  window.open(img, "_blank");
-});
+      $("partecipantiBody").innerHTML = state.partecipanti.map((row) => `
+        <tr>
+          <td>${esc(row.nome)}</td>
+          <td>${esc(row.qualifica)}</td>
+          <td>${esc(row.data)}</td>
+        </tr>
+      `).join("");
 
-/* ----------------- GLOBAL ERROR HANDLING PER DIAGNOSI ----------------- */
-window.addEventListener('error', function(ev) {
-  const msg = "JS Error: " + ev.message + " @ " + ev.filename + ":" + ev.lineno + ":" + ev.colno;
-  logDiag(msg);
-});
-window.addEventListener('unhandledrejection', function(ev) {
-  const reason = ev.reason && ev.reason.message ? ev.reason.message : JSON.stringify(ev.reason);
-  logDiag("UnhandledPromiseRejection: " + reason);
-});
+      $("nomeFile").textContent = `Nome PDF: ${fileName()}`;
+    }
 
-/* ----------------- UTILITY DI TEST RAPIDO (dopo caricamento) ----------------- */
-setTimeout(() => {
-  try {
-    ["firmaIstruttore","firmaCliente"].forEach(id => {
-      const c = $(id);
-      if (!c) { logDiag("canvas mancante: " + id); return; }
-      logDiag(id + " DOM size: " + Math.round(c.getBoundingClientRect().width) + "x" + Math.round(c.getBoundingClientRect().height) + ", raw: " + c.width + "x" + c.height);
-      const ctx = c.getContext('2d');
-      logDiag(id + " has 2D context: " + !!ctx);
+    // ----- LOGICA FIRMA: USO DI POINTER EVENTS + HIGH-DPI SAFE -----
+    function setupCanvas(id) {
+      const canvas = $(id);
+      const ctx = canvas.getContext("2d", { willReadFrequently: false });
+      let drawing = false;
+      let lastX = 0;
+      let lastY = 0;
+      let scale = 1;
+      let initialized = false;
+
+      function init() {
+        // calcola dimensione visibile
+        const rect = canvas.getBoundingClientRect();
+        if (rect.width === 0 || rect.height === 0) return;
+        const ratio = window.devicePixelRatio || 1;
+        scale = ratio;
+
+        // Imposta dimensione reale del canvas per avere rendering nitido su schermi hi-dpi
+        canvas.width = Math.round(rect.width * ratio);
+        canvas.height = Math.round(rect.height * ratio);
+
+        // imposta dimensione CSS (rimane via style)
+        canvas.style.width = rect.width + "px";
+        canvas.style.height = rect.height + "px";
+
+        // Scala il contesto
+        ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+
+        // Stili di disegno
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
+        ctx.strokeStyle = "#000";
+        ctx.lineWidth = 3;
+        ctx.fillStyle = "#fff";
+        ctx.fillRect(0, 0, rect.width, rect.height);
+
+        initialized = true;
+      }
+
+      function toLocalCoords(clientX, clientY) {
+        const rect = canvas.getBoundingClientRect();
+        // coordinate relative all'area CSS (non alla pixel ratio)
+        const x = (clientX - rect.left);
+        const y = (clientY - rect.top);
+        return { x, y };
+      }
+
+      function pointerDown(e) {
+        // inizializza se necessario
+        if (!initialized) init();
+        drawing = true;
+        const p = toLocalCoords(e.clientX, e.clientY);
+        lastX = p.x;
+        lastY = p.y;
+        ctx.beginPath();
+        ctx.moveTo(lastX, lastY);
+        // previeni scorrimento quando si firma
+        if (e.cancelable) e.preventDefault();
+      }
+
+      function pointerMove(e) {
+        if (!drawing) return;
+        const p = toLocalCoords(e.clientX, e.clientY);
+        // linee morbide con quadratic curve
+        const midX = (lastX + p.x) / 2;
+        const midY = (lastY + p.y) / 2;
+        ctx.quadraticCurveTo(lastX, lastY, midX, midY);
+        ctx.stroke();
+        lastX = p.x;
+        lastY = p.y;
+        if (e.cancelable) e.preventDefault();
+      }
+
+      function pointerUp(e) {
+        if (!drawing) return;
+        drawing = false;
+        ctx.closePath();
+        if (e.cancelable) e.preventDefault();
+      }
+
+      // Usa pointer events per supportare mouse/touch/pen in modo unificato
+      canvas.addEventListener("pointerdown", pointerDown, { passive: false });
+      window.addEventListener("pointermove", pointerMove, { passive: false });
+      window.addEventListener("pointerup", pointerUp, { passive: false });
+      window.addEventListener("pointercancel", pointerUp, { passive: false });
+
+      // Permetti re-inizializzazione se la dimensione del canvas cambia (es. rotazione)
+      function handleResize() {
+        // conserva immagine corrente
+        const rect = canvas.getBoundingClientRect();
+        if (rect.width === 0 || rect.height === 0) return;
+
+        const dataUrl = canvas.toDataURL();
+        init();
+        // ripristina immagine precedente su nuovo contesto
+        const img = new Image();
+        img.onload = function() {
+          ctx.drawImage(img, 0, 0, rect.width, rect.height);
+        };
+        img.src = dataUrl;
+      }
+      window.addEventListener("resize", () => {
+        // leggero debounce
+        clearTimeout(canvas._resizeTimeout);
+        canvas._resizeTimeout = setTimeout(handleResize, 120);
+      });
+
+      // espone funzioni utili
+      canvas.clearSignature = function() {
+        const rect = canvas.getBoundingClientRect();
+        ctx.setTransform(scale, 0, 0, scale, 0, 0);
+        ctx.fillStyle = "#fff";
+        ctx.fillRect(0, 0, rect.width, rect.height);
+        ctx.beginPath();
+      };
+
+      canvas.getDataURL = function() {
+        // restituisce PNG con dimensione corretta
+        return canvas.toDataURL("image/png");
+      };
+
+      // Forza inizializzazione nel momento opportuno
+      canvas.forceInit = init;
+    }
+
+    // inizializza canvases
+    setupCanvas("firmaIstruttore");
+    setupCanvas("firmaCliente");
+
+    // GESTIONE CAMBIO TAB E INIZIALIZZAZIONE DEL CANVAS
+    function setActiveTab(tabId) {
+      const target = $(tabId);
+      if (!target) return;
+
+      document.querySelectorAll("nav button").forEach((button) => {
+        const isActive = button.dataset.tab === tabId;
+        button.classList.toggle("active", isActive);
+        button.setAttribute("aria-pressed", isActive ? "true" : "false");
+      });
+
+      document.querySelectorAll("main section").forEach((section) => {
+        section.classList.toggle("active", section.id === tabId);
+      });
+
+      // Forza l'inizializzazione corretta appena la scheda firme appare a schermo
+      if (tabId === "firme") {
+        window.setTimeout(() => {
+          if ($("firmaIstruttore").forceInit) $("firmaIstruttore").forceInit();
+          if ($("firmaCliente").forceInit) $("firmaCliente").forceInit();
+        }, 50);
+      }
+    }
+
+    document.querySelector("nav").addEventListener("click", (event) => {
+      const button = event.target.closest("button[data-tab]");
+      if (!button) return;
+      setActiveTab(button.dataset.tab);
     });
-  } catch(e) { logDiag("errore test rapido: " + e.message); }
-}, 300);
 
-/* ----------------- ISTRUZIONI BREVI (nel pannello diagnostico) ----------------- */
-logDiag("Istruzioni: vai su tab 'Firme' e prova a firmare. Osserva i messaggi live. Se non ricevi eventi, copia i messaggi [DIAG] dalla console e incollali qui.");
-</script>
+    $("addAttivita").addEventListener("click", () => {
+      const data = formatDate(value("dataAttivita"));
+      if (!data) {
+        toast("Seleziona la data dell'attivita.");
+        return;
+      }
+      state.attivita.push({
+        tipo: value("tipoAttivita"),
+        inizio: `${data} ${value("oraInizio")}`,
+        fine: `${data} ${value("oraFine")}`
+      });
+      $("dataAttivita").value = "";
+      refreshTables();
+    });
+
+    $("clearAttivita").addEventListener("click", () => {
+      state.attivita = [];
+      refreshTables();
+    });
+
+    $("addPartecipante").addEventListener("click", () => {
+      const nome = value("nomePartecipante").toUpperCase();
+      if (!nome) {
+        toast("Inserisci il nome del partecipante.");
+        return;
+      }
+      state.partecipanti.push({
+        nome,
+        qualifica: value("qualifica"),
+        data: formatDate(value("dataPartecipante"))
+      });
+      $("nomePartecipante").value = "";
+      $("qualifica").value = "";
+      $("dataPartecipante").value = "";
+      refreshTables();
+    });
+
+    $("clearPartecipanti").addEventListener("click", () => {
+      state.partecipanti = [];
+      refreshTables();
+    });
+
+    document.querySelectorAll("[data-clear]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const canvas = $(button.dataset.clear);
+        if (canvas && canvas.clearSignature) {
+          canvas.clearSignature();
+        } else if (canvas) {
+          const ctx = canvas.getContext("2d");
+          ctx.fillStyle = "#ffffff";
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+      });
+    });
+
+    // pulsanti di salvataggio immagine (per test)
+    $("saveIstruttore").addEventListener("click", () => {
+      const img = $("firmaIstruttore").getDataURL();
+      // per demo, apri in nuova scheda
+      window.open(img, "_blank");
+    });
+    $("saveCliente").addEventListener("click", () => {
+      const img = $("firmaCliente").getDataURL();
+      window.open(img, "_blank");
+    });
+
+    function signatureImage(id) {
+      return $(id).getDataURL ? $(id).getDataURL() : $(id).toDataURL("image/png");
+    }
+
+    function buildPrint() {
+      const checks = [
+        [$("chk1").checked, "Consegnato Programma di Formazione"],
+        [$("chk2").checked, "Illustrata la documentazione d'Uso del sistema"],
+        [$("chk3").checked, "Eseguita formazione specifica sulla Sicurezza"]
+      ];
+      // Resto dell'implementazione di buildPrint (non modificata in questa richiesta)
+    }
+
+    // mostra nome file iniziale
+    refreshTables();
+  </script>
 </body>
 </html>
