@@ -234,7 +234,6 @@
       border-radius: 8px;
       background: #fff;
       touch-action: none;
-      display: block;
     }
 
     .small {
@@ -693,61 +692,45 @@
       refreshTables();
     });
 
-    // --------- Setup Canvas for Signatures (fixed) ----------
     function setupCanvas(id) {
       const canvas = $(id);
-      if (!canvas) return;
-      const ctx = canvas.getContext("2d", { willReadFrequently: true });
+      const ctx = canvas.getContext("2d");
       let drawing = false;
       let last = null;
 
-      // Ensure pointer events are enabled on the element
-      canvas.style.touchAction = "none";
-
       function resize() {
-        // Save current content
-        const data = canvas.toDataURL();
         const rect = canvas.getBoundingClientRect();
         const ratio = window.devicePixelRatio || 1;
-
-        // Set the internal pixel size to match the displayed size * ratio
+        const image = canvas.toDataURL();
         canvas.width = Math.max(1, Math.floor(rect.width * ratio));
         canvas.height = Math.max(1, Math.floor(rect.height * ratio));
-
-        // Scale drawing operations so 1 unit = 1 CSS pixel
         ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
-
-        // Fill white background
         ctx.fillStyle = "#fff";
         ctx.fillRect(0, 0, rect.width, rect.height);
-
-        // Restore saved image (if any)
-        if (data && data.length > 100) {
+        if (image && image.length > 100) {
           const img = new Image();
-          img.onload = () => {
-            ctx.drawImage(img, 0, 0, rect.width, rect.height);
-          };
-          img.src = data;
+          img.onload = () => ctx.drawImage(img, 0, 0, rect.width, rect.height);
+          img.src = image;
         }
       }
 
-      function getPointFromEvent(ev) {
+      function point(event) {
         const rect = canvas.getBoundingClientRect();
-        const x = ev.clientX - rect.left;
-        const y = ev.clientY - rect.top;
-        return { x, y };
+        return {
+          x: event.clientX - rect.left,
+          y: event.clientY - rect.top
+        };
       }
 
-      canvas.addEventListener("pointerdown", (ev) => {
-        ev.preventDefault();
+      canvas.addEventListener("pointerdown", (event) => {
         drawing = true;
-        last = getPointFromEvent(ev);
-        canvas.setPointerCapture(ev.pointerId);
+        last = point(event);
+        canvas.setPointerCapture(event.pointerId);
       });
 
-      canvas.addEventListener("pointermove", (ev) => {
+      canvas.addEventListener("pointermove", (event) => {
         if (!drawing || !last) return;
-        const next = getPointFromEvent(ev);
+        const next = point(event);
         ctx.strokeStyle = "#000";
         ctx.lineWidth = 3;
         ctx.lineCap = "round";
@@ -759,60 +742,30 @@
         last = next;
       });
 
-      function endDraw(ev) {
-        if (!drawing) return;
+      canvas.addEventListener("pointerup", () => {
         drawing = false;
         last = null;
-        try { canvas.releasePointerCapture && canvas.releasePointerCapture(ev && ev.pointerId); } catch (e) {}
-      }
+      });
 
-      canvas.addEventListener("pointerup", endDraw);
-      canvas.addEventListener("pointercancel", endDraw);
-      canvas.addEventListener("pointerout", endDraw);
-      canvas.addEventListener("pointerleave", endDraw);
-
-      // Public clear function via dataset (used below)
-      canvas.clearCanvas = function() {
-        // Clear using real pixel size; reset transform first then fill white
-        ctx.setTransform(1,0,0,1,0,0);
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        const rect = canvas.getBoundingClientRect();
-        const ratio = window.devicePixelRatio || 1;
-        ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
-        ctx.fillStyle = "#fff";
-        ctx.fillRect(0, 0, rect.width, rect.height);
-      };
-
-      // Initialize size
       resize();
-      // Recompute on window resize
       window.addEventListener("resize", resize);
     }
 
     setupCanvas("firmaIstruttore");
     setupCanvas("firmaCliente");
 
-    // Clear buttons
     document.querySelectorAll("[data-clear]").forEach((button) => {
       button.addEventListener("click", () => {
         const canvas = $(button.dataset.clear);
-        if (!canvas) return;
-        if (typeof canvas.clearCanvas === "function") {
-          canvas.clearCanvas();
-        } else {
-          // fallback
-          const ctx = canvas.getContext("2d");
-          ctx.setTransform(1,0,0,1,0,0);
-          ctx.clearRect(0,0,canvas.width,canvas.height);
-        }
+        const ctx = canvas.getContext("2d");
+        const rect = canvas.getBoundingClientRect();
+        ctx.fillStyle = "#fff";
+        ctx.fillRect(0, 0, rect.width, rect.height);
       });
     });
 
     function signatureImage(id) {
-      const c = $(id);
-      if (!c) return "";
-      // toDataURL will capture current visual content
-      return c.toDataURL("image/png");
+      return $(id).toDataURL("image/png");
     }
 
     function buildPrint() {
@@ -890,3 +843,5 @@
   </script>
 </body>
 </html>
+
+
