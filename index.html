@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#0b5ede">
   <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-title" content="Modulo Philips">
+  <meta name="apple-mobile-web-app-title" content="Modulo Philips">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="application-name" content="Modulo Philips">
   <link rel="manifest" href="manifest.json">
@@ -692,63 +692,77 @@
       refreshTables();
     });
 
+    // NUOVA FUNZIONE SETUP CANVAS COMPATIBILE CON SMARTPHONE (TOUCH NATIVO + POINTER)
     function setupCanvas(id) {
       const canvas = $(id);
       const ctx = canvas.getContext("2d");
       let drawing = false;
       let last = null;
 
-      function resize() {
+      function initCanvas() {
         const rect = canvas.getBoundingClientRect();
         const ratio = window.devicePixelRatio || 1;
-        const image = canvas.toDataURL();
-        canvas.width = Math.max(1, Math.floor(rect.width * ratio));
-        canvas.height = Math.max(1, Math.floor(rect.height * ratio));
-        ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
-        ctx.fillStyle = "#fff";
-        ctx.fillRect(0, 0, rect.width, rect.height);
-        if (image && image.length > 100) {
-          const img = new Image();
-          img.onload = () => ctx.drawImage(img, 0, 0, rect.width, rect.height);
-          img.src = image;
-        }
-      }
-
-      function point(event) {
-        const rect = canvas.getBoundingClientRect();
-        return {
-          x: event.clientX - rect.left,
-          y: event.clientY - rect.top
-        };
-      }
-
-      canvas.addEventListener("pointerdown", (event) => {
-        drawing = true;
-        last = point(event);
-        canvas.setPointerCapture(event.pointerId);
-      });
-
-      canvas.addEventListener("pointermove", (event) => {
-        if (!drawing || !last) return;
-        const next = point(event);
-        ctx.strokeStyle = "#000";
+        
+        canvas.width = rect.width * ratio;
+        canvas.height = rect.height * ratio;
+        ctx.scale(ratio, ratio);
+        
+        ctx.strokeStyle = "#000000";
         ctx.lineWidth = 3;
         ctx.lineCap = "round";
         ctx.lineJoin = "round";
+        
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, rect.width, rect.height);
+      }
+
+      function getCoordinates(e) {
+        const rect = canvas.getBoundingClientRect();
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        
+        return {
+          x: clientX - rect.left,
+          y: clientY - rect.top
+        };
+      }
+
+      function startDrawing(e) {
+        if (e.cancelable) e.preventDefault();
+        drawing = true;
+        last = getCoordinates(e);
+      }
+
+      function draw(e) {
+        if (!drawing || !last) return;
+        if (e.cancelable) e.preventDefault();
+
+        const current = getCoordinates(e);
+
         ctx.beginPath();
         ctx.moveTo(last.x, last.y);
-        ctx.lineTo(next.x, next.y);
+        ctx.lineTo(current.x, current.y);
         ctx.stroke();
-        last = next;
-      });
 
-      canvas.addEventListener("pointerup", () => {
+        last = current;
+      }
+
+      function stopDrawing() {
         drawing = false;
         last = null;
-      });
+      }
 
-      resize();
-      window.addEventListener("resize", resize);
+      // Supporto eventi Pointer generici
+      canvas.addEventListener("pointerdown", startDrawing, { passive: false });
+      canvas.addEventListener("pointermove", draw, { passive: false });
+      window.addEventListener("pointerup", stopDrawing);
+
+      // Supporto nativo eventi Touch (iOS Safari / Android)
+      canvas.addEventListener("touchstart", startDrawing, { passive: false });
+      canvas.addEventListener("touchmove", draw, { passive: false });
+      window.addEventListener("touchend", stopDrawing);
+
+      initCanvas();
     }
 
     setupCanvas("firmaIstruttore");
@@ -843,5 +857,3 @@
   </script>
 </body>
 </html>
-
-
