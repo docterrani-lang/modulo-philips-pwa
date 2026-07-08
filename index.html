@@ -605,7 +605,7 @@
 
     function subject() {
       const specialist = value("istruttore") || "Application Specialist non indicato";
-      const serial = value("serial") || "Serial Number non indicator";
+      const serial = value("serial") || "Serial Number non indicato";
       return `Rapporto Formazione Philips - ${specialist} - SN ${serial}`;
     }
 
@@ -629,19 +629,173 @@
       $("nomeFile").textContent = `Nome PDF: ${fileName()}`;
     }
 
-    // GESTIONE FIRME CON POINTER EVENTS (UNIVERSALE MOUSE + TOUCH NATIVO)
+    // LOGICA DI DISEGNO STANDARD SUPER COMPATIBILE (MOUSE + TOUCH)
     function setupCanvas(id) {
       const canvas = $(id);
       const ctx = canvas.getContext("2d");
       let drawing = false;
-      let isInitialized = false;
+      let initialized = false;
 
-      function initCanvas() {
-        if (isInitialized) return true; // Non reinizializzare se è già pronto!
-        
+      // Inizializza le dimensioni una volta sola quando il tab diventa visibile
+      function initDimensions() {
+        if (initialized) return;
         const rect = canvas.getBoundingClientRect();
-        if (rect.width === 0 || rect.height === 0) return false;
+        if (rect.width === 0 || rect.height === 0) return;
 
         const ratio = window.devicePixelRatio || 1;
         canvas.width = rect.width * ratio;
-        canvas.height
+        canvas.height = rect.height * ratio;
+        ctx.scale(ratio, ratio);
+
+        ctx.strokeStyle = "#000000";
+        ctx.lineWidth = 3;
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
+
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, rect.width, rect.height);
+        initialized = true;
+      }
+
+      function getPos(e) {
+        const rect = canvas.getBoundingClientRect();
+        let clientX = e.clientX;
+        let clientY = e.clientY;
+
+        if (e.touches && e.touches.length > 0) {
+          clientX = e.touches[0].clientX;
+          clientY = e.touches[0].clientY;
+        }
+
+        return {
+          x: clientX - rect.left,
+          y: clientY - rect.top
+        };
+      }
+
+      function start(e) {
+        if (e.cancelable) e.preventDefault();
+        drawing = true;
+        const pos = getPos(e);
+        ctx.beginPath();
+        ctx.moveTo(pos.x, pos.y);
+      }
+
+      function move(e) {
+        if (!drawing) return;
+        if (e.cancelable) e.preventDefault();
+        const pos = getPos(e);
+        ctx.lineTo(pos.x, pos.y);
+        ctx.stroke();
+      }
+
+      function stop() {
+        drawing = false;
+      }
+
+      // Eventi Mouse (PC)
+      canvas.addEventListener("mousedown", start);
+      canvas.addEventListener("mousemove", move);
+      canvas.addEventListener("mouseup", stop);
+      canvas.addEventListener("mouseleave", stop);
+
+      // Eventi Touch (Telefono)
+      canvas.addEventListener("touchstart", start, { passive: false });
+      canvas.addEventListener("touchmove", move, { passive: false });
+      canvas.addEventListener("touchend", stop);
+
+      canvas.forceInit = initDimensions;
+    }
+
+    setupCanvas("firmaIstruttore");
+    setupCanvas("firmaCliente");
+
+    // GESTIONE CAMBIO TAB E INIZIALIZZAZIONE DEL CANVAS
+    function setActiveTab(tabId) {
+      const target = $(tabId);
+      if (!target) return;
+
+      document.querySelectorAll("nav button").forEach((button) => {
+        const isActive = button.dataset.tab === tabId;
+        button.classList.toggle("active", isActive);
+        button.setAttribute("aria-pressed", isActive ? "true" : "false");
+      });
+
+      document.querySelectorAll("main section").forEach((section) => {
+        section.classList.toggle("active", section.id === tabId);
+      });
+
+      // Forza l'inizializzazione corretta appena la scheda firme appare a schermo
+      if (tabId === "firme") {
+        window.setTimeout(() => {
+          if ($("firmaIstruttore").forceInit) $("firmaIstruttore").forceInit();
+          if ($("firmaCliente").forceInit) $("firmaCliente").forceInit();
+        }, 100);
+      }
+    }
+
+    document.querySelector("nav").addEventListener("click", (event) => {
+      const button = event.target.closest("button[data-tab]");
+      if (!button) return;
+      setActiveTab(button.dataset.tab);
+    });
+
+    $("addAttivita").addEventListener("click", () => {
+      const data = formatDate(value("dataAttivita"));
+      if (!data) {
+        toast("Seleziona la data dell'attivita.");
+        return;
+      }
+      state.attivita.push({
+        tipo: value("tipoAttivita"),
+        inizio: `${data} ${value("oraInizio")}`,
+        fine: `${data} ${value("oraFine")}`
+      });
+      $("dataAttivita").value = "";
+      refreshTables();
+    });
+
+    $("clearAttivita").addEventListener("click", () => {
+      state.attivita = [];
+      refreshTables();
+    });
+
+    $("addPartecipante").addEventListener("click", () => {
+      const nome = value("nomePartecipante").toUpperCase();
+      if (!nome) {
+        toast("Inserisci il nome del partecipante.");
+        return;
+      }
+      state.partecipanti.push({
+        nome,
+        qualifica: value("qualifica"),
+        data: formatDate(value("dataPartecipante"))
+      });
+      $("nomePartecipante").value = "";
+      $("qualifica").value = "";
+      $("dataPartecipante").value = "";
+      refreshTables();
+    });
+
+    $("clearPartecipanti").addEventListener("click", () => {
+      state.partecipanti = [];
+      refreshTables();
+    });
+
+    document.querySelectorAll("[data-clear]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const canvas = $(button.dataset.clear);
+        const ctx = canvas.getContext("2d");
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      });
+    });
+
+    function signatureImage(id) {
+      return $(id).toDataURL("image/png");
+    }
+
+    function buildPrint() {
+      const checks = [
+        [$("chk1").checked, "Consegnato Programma di Formazione"],
+        [$("chk2").checked, "Illustrata la documentazione d'Uso del sistema"],
