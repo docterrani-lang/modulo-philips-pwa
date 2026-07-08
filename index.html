@@ -1,366 +1,892 @@
-<script>
-  // ----------------- Script principale (tabelle, PDF/mail, firme corrette) -----------------
-  const state = {
-    attivita: [],
-    partecipanti: []
-  };
-
-  const $ = (id) => document.getElementById(id);
-
-  function toast(message) {
-    const el = $("toast");
-    el.textContent = message;
-    el.style.display = "block";
-    window.setTimeout(() => {
-      el.style.display = "none";
-    }, 2600);
-  }
-
-  function value(id) {
-    return ($(id).value || "").trim();
-  }
-
-  function esc(text) {
-    return String(text || "")
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;");
-  }
-
-  function formatDate(inputValue) {
-    if (!inputValue) return "";
-    const parts = inputValue.split("-");
-    if (parts.length !== 3) return inputValue;
-    return `${parts[2]}/${parts[1]}/${parts[0]}`;
-  }
-
-  function cleanFilePart(text, fallback) {
-    const cleaned = String(text || fallback)
-      .trim()
-      .replace(/[<>:"/\\|?*]+/g, "-")
-      .replace(/\s+/g, "_");
-    return cleaned || fallback;
-  }
-
-  function fileName() {
-    const today = new Date().toISOString().slice(0, 10);
-    const specialist = cleanFilePart(value("istruttore"), "Application_Specialist");
-    const project = cleanFilePart(value("project"), "Project");
-    return `${specialist}_${project}_${today}.pdf`;
-  }
-
-  function subject() {
-    const specialist = value("istruttore") || "Application Specialist non indicato";
-    const serial = value("serial") || "Serial Number non indicato";
-    return `Rapporto Formazione Philips - ${specialist} - SN ${serial}`;
-  }
-
-  function refreshTables() {
-    $("attivitaBody").innerHTML = state.attivita.map((row) => `
-      <tr>
-        <td>${esc(row.tipo)}</td>
-        <td>${esc(row.inizio)}</td>
-        <td>${esc(row.fine)}</td>
-      </tr>
-    `).join("");
-
-    $("partecipantiBody").innerHTML = state.partecipanti.map((row) => `
-      <tr>
-        <td>${esc(row.nome)}</td>
-        <td>${esc(row.qualifica)}</td>
-        <td>${esc(row.data)}</td>
-      </tr>
-    `).join("");
-
-    $("nomeFile").textContent = `Nome PDF: ${fileName()}`;
-  }
-
-  function setActiveTab(tabId) {
-    const target = $(tabId);
-    if (!target) return;
-
-    document.querySelectorAll("nav button").forEach((button) => {
-      const isActive = button.dataset.tab === tabId;
-      button.classList.toggle("active", isActive);
-      button.setAttribute("aria-pressed", isActive ? "true" : "false");
-    });
-
-    document.querySelectorAll("main section").forEach((section) => {
-      section.classList.toggle("active", section.id === tabId);
-    });
-  }
-
-  document.querySelector("nav").addEventListener("click", (event) => {
-    const button = event.target.closest("button[data-tab]");
-    if (!button) return;
-    setActiveTab(button.dataset.tab);
-  });
-
-  $("addAttivita").addEventListener("click", () => {
-    const data = formatDate(value("dataAttivita"));
-    if (!data) {
-      toast("Seleziona la data dell'attivita.");
-      return;
-    }
-    state.attivita.push({
-      tipo: value("tipoAttivita"),
-      inizio: `${data} ${value("oraInizio")}`,
-      fine: `${data} ${value("oraFine")}`
-    });
-    $("dataAttivita").value = "";
-    refreshTables();
-  });
-
-  $("clearAttivita").addEventListener("click", () => {
-    state.attivita = [];
-    refreshTables();
-  });
-
-  $("addPartecipante").addEventListener("click", () => {
-    const nome = value("nomePartecipante").toUpperCase();
-    if (!nome) {
-      toast("Inserisci il nome del partecipante.");
-      return;
-    }
-    state.partecipanti.push({
-      nome,
-      qualifica: value("qualifica"),
-      data: formatDate(value("dataPartecipante"))
-    });
-    $("nomePartecipante").value = "";
-    $("qualifica").value = "";
-    $("dataPartecipante").value = "";
-    refreshTables();
-  });
-
-  $("clearPartecipanti").addEventListener("click", () => {
-    state.partecipanti = [];
-    refreshTables();
-  });
-
-  // ----------------- Signature handling (DPI-aware, pointer events, clear, export) -----------------
-  (function() {
-    const canvasIds = ['firmaIstruttore', 'firmaCliente'];
-    const TRANSPARENT_PNG = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVQIW2NgYAAAAAMAAWgmWQ0AAAAASUVORK5CYII=';
-
-    function createEmptyImageDataURL(width, height) {
-      const tmp = document.createElement('canvas');
-      tmp.width = Math.max(1, Math.floor(width));
-      tmp.height = Math.max(1, Math.floor(height));
-      const tctx = tmp.getContext('2d');
-      tctx.fillStyle = '#ffffff';
-      tctx.fillRect(0, 0, tmp.width, tmp.height);
-      return tmp.toDataURL('image/png');
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b5ede">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Modulo Philips">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="application-name" content="Modulo Philips">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <title>Modulo Philips APP</title>
+  <style>
+    :root {
+      --blue: #0b5ede;
+      --ink: #172033;
+      --muted: #667085;
+      --line: #d8dee8;
+      --soft: #f4f7fb;
+      --white: #ffffff;
+      --ok: #087443;
+      --danger: #b42318;
     }
 
-    function setupSingleCanvas(id) {
-      const canvas = document.getElementById(id);
-      if (!canvas) return null;
-      const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--soft);
+      color: var(--ink);
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 15px;
+      line-height: 1.35;
+    }
+
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: var(--white);
+      border-bottom: 1px solid var(--line);
+      padding: 12px 14px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .brand strong {
+      color: var(--blue);
+      font-size: 20px;
+      letter-spacing: 1px;
+    }
+
+    .brand span {
+      color: var(--muted);
+      font-size: 12px;
+      text-align: right;
+    }
+
+    nav {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+      margin-top: 12px;
+    }
+
+    nav button,
+    .actions button,
+    .inline button,
+    .danger-button {
+      min-height: 42px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--white);
+      color: var(--ink);
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    nav button.active {
+      background: var(--blue);
+      border-color: var(--blue);
+      color: var(--white);
+    }
+
+    main {
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 14px;
+    }
+
+    section {
+      display: none;
+    }
+
+    section.active {
+      display: block;
+    }
+
+    .panel {
+      background: var(--white);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 14px;
+      margin-bottom: 12px;
+    }
+
+    h1,
+    h2 {
+      margin: 0 0 12px;
+      font-size: 18px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    label {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+      margin-bottom: 5px;
+      text-transform: uppercase;
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      min-height: 42px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--white);
+      color: var(--ink);
+      font: inherit;
+      padding: 9px 10px;
+    }
+
+    textarea {
+      min-height: 92px;
+      resize: vertical;
+    }
+
+    .inline {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      align-items: end;
+    }
+
+    .actions {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .actions .primary {
+      background: var(--blue);
+      border-color: var(--blue);
+      color: var(--white);
+    }
+
+    .actions .success {
+      background: var(--ok);
+      border-color: var(--ok);
+      color: var(--white);
+    }
+
+    .danger-button {
+      color: var(--danger);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      background: var(--white);
+    }
+
+    th,
+    td {
+      border-bottom: 1px solid var(--line);
+      padding: 8px 6px;
+      text-align: left;
+      vertical-align: top;
+      font-size: 13px;
+    }
+
+    th {
+      color: var(--muted);
+      font-size: 11px;
+      text-transform: uppercase;
+    }
+
+    .checks {
+      display: grid;
+      gap: 8px;
+    }
+
+    .check-row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      color: var(--ink);
+    }
+
+    .check-row input {
+      width: 20px;
+      min-height: 20px;
+    }
+
+    .signature-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    canvas {
+      width: 100%;
+      height: 150px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      touch-action: none;
+      display: block;
+    }
+
+    .small {
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 8px;
+    }
+
+    #toast {
+      position: fixed;
+      left: 12px;
+      right: 12px;
+      bottom: 12px;
+      z-index: 50;
+      display: none;
+      border-radius: 8px;
+      background: #172033;
+      color: white;
+      padding: 12px;
+      text-align: center;
+    }
+
+    #printArea {
+      display: none;
+    }
+
+    @media (max-width: 720px) {
+      .grid,
+      .inline,
+      .signature-grid,
+      .actions {
+        grid-template-columns: 1fr;
+      }
+
+      nav button {
+        font-size: 13px;
+        padding: 6px;
+      }
+
+      main {
+        padding: 10px;
+      }
+    }
+
+    @media print {
+      body > header,
+      body > main,
+      #toast {
+        display: none !important;
+      }
+
+      #printArea {
+        display: block;
+        color: #000;
+        font-family: Arial, Helvetica, sans-serif;
+      }
+
+      @page {
+        size: A4;
+        margin: 12mm;
+      }
+
+      .print-title {
+        color: #0b5ede;
+        font-size: 26px;
+        font-weight: 700;
+        margin-bottom: 14px;
+      }
+
+      .print-heading {
+        font-size: 16px;
+        font-weight: 700;
+        margin: 14px 0 8px;
+      }
+
+      .print-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        border: 1px solid #000;
+        border-bottom: 0;
+      }
+
+      .print-cell {
+        border-right: 1px solid #000;
+        border-bottom: 1px solid #000;
+        padding: 7px;
+        min-height: 34px;
+      }
+
+      .print-cell:nth-child(2n) {
+        border-right: 0;
+      }
+
+      .print-label {
+        color: #555;
+        font-size: 10px;
+        font-weight: 700;
+        margin-bottom: 3px;
+      }
+
+      .print-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 12px;
+      }
+
+      .print-table th,
+      .print-table td {
+        border: 1px solid #000;
+        padding: 6px;
+        font-size: 11px;
+      }
+
+      .print-signatures {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 28px;
+        margin-top: 24px;
+      }
+
+      .print-signature img {
+        width: 190px;
+        height: 76px;
+        object-fit: contain;
+        border-bottom: 1px solid #000;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <strong>PHILIPS</strong>
+      <span>Rapporto formazione applicativa</span>
+    </div>
+    <nav aria-label="Sezioni modulo">
+      <button type="button" class="active" data-tab="dati" aria-pressed="true">Dati</button>
+      <button type="button" data-tab="partecipanti" aria-pressed="false">Partecipanti</button>
+      <button type="button" data-tab="firme" aria-pressed="false">Firme e invio</button>
+    </nav>
+  </header>
+
+  <main>
+    <section id="dati" class="active">
+      <div class="panel">
+        <h1>Dati e attivita</h1>
+        <div class="grid">
+          <div>
+            <label for="cliente">Cliente / Reparto</label>
+            <input id="cliente" autocomplete="organization">
+          </div>
+          <div>
+            <label for="project">Project N.</label>
+            <input id="project">
+          </div>
+          <div>
+            <label for="sistema">Sistema / Modello</label>
+            <input id="sistema">
+          </div>
+          <div>
+            <label for="serial">Serial Number</label>
+            <input id="serial">
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>Attivita giornaliere</h2>
+        <div class="grid">
+          <div>
+            <label for="tipoAttivita">Attivita</label>
+            <select id="tipoAttivita">
+              <option>Training Applicativo</option>
+              <option>Clinical Application</option>
+              <option>Follow-up Training</option>
+              <option>Handover / Affiancamento</option>
+            </select>
+          </div>
+          <div>
+            <label for="dataAttivita">Data</label>
+            <input id="dataAttivita" type="date">
+          </div>
+          <div>
+            <label for="oraInizio">Ora inizio</label>
+            <input id="oraInizio" type="time" value="08:00">
+          </div>
+          <div>
+            <label for="oraFine">Ora fine</label>
+            <input id="oraFine" type="time" value="16:00">
+          </div>
+        </div>
+        <div class="actions">
+          <button type="button" class="primary" id="addAttivita">Aggiungi giorno</button>
+          <button type="button" class="danger-button" id="clearAttivita">Svuota elenco</button>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Tipo</th>
+              <th>Inizio</th>
+              <th>Fine</th>
+            </tr>
+          </thead>
+          <tbody id="attivitaBody"></tbody>
+        </table>
+      </div>
+
+      <div class="panel">
+        <label for="note">Note / Descrizione dell'attivita</label>
+        <textarea id="note"></textarea>
+        <div class="checks">
+          <label class="check-row"><input id="chk1" type="checkbox"> Consegnato Programma di Formazione</label>
+          <label class="check-row"><input id="chk2" type="checkbox"> Illustrata la documentazione d'Uso</label>
+          <label class="check-row"><input id="chk3" type="checkbox"> Eseguita formazione specifica sulla Sicurezza</label>
+        </div>
+      </div>
+    </section>
+
+    <section id="partecipanti">
+      <div class="panel">
+        <h1>Elenco partecipanti</h1>
+        <div class="grid">
+          <div>
+            <label for="nomePartecipante">Nome Cognome</label>
+            <input id="nomePartecipante" autocomplete="name">
+          </div>
+          <div>
+            <label for="qualifica">Qualifica</label>
+            <select id="qualifica">
+              <option value=""></option>
+              <option>TSRM</option>
+              <option>DOTT</option>
+              <option>ING</option>
+              <option>FISICO</option>
+              <option>INF</option>
+            </select>
+          </div>
+          <div>
+            <label for="dataPartecipante">Data</label>
+            <input id="dataPartecipante" type="date">
+          </div>
+        </div>
+        <div class="actions">
+          <button type="button" class="primary" id="addPartecipante">Aggiungi partecipante</button>
+          <button type="button" class="danger-button" id="clearPartecipanti">Svuota elenco</button>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Nome Cognome</th>
+              <th>Qualifica</th>
+              <th>Data</th>
+            </tr>
+          </thead>
+          <tbody id="partecipantiBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="firme">
+      <div class="panel">
+        <h1>Firme</h1>
+        <div class="grid">
+          <div>
+            <label for="istruttore">Application Specialist</label>
+            <input id="istruttore">
+          </div>
+          <div>
+            <label for="respCliente">Resp. Cliente</label>
+            <input id="respCliente">
+          </div>
+        </div>
+        <div class="signature-grid" style="margin-top:12px">
+          <div>
+            <label>Firma Specialist / Instructor</label>
+            <canvas id="firmaIstruttore"></canvas>
+            <button type="button" class="danger-button" data-clear="firmaIstruttore">Cancella</button>
+          </div>
+          <div>
+            <label>Firma accettazione cliente</label>
+            <canvas id="firmaCliente"></canvas>
+            <button type="button" class="danger-button" data-clear="firmaCliente">Cancella</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>Invio email</h2>
+        <div class="grid">
+          <div>
+            <label for="mailA">A</label>
+            <select id="mailA">
+              <option>paola.bessi@philips.com</option>
+            </select>
+          </div>
+          <div>
+            <label for="mailDa">Mittente Philips</label>
+            <select id="mailDa">
+              <option>simone.terrani@philips.com</option>
+              <option>alfredo.sanguinetti@philips.com</option>
+              <option>bruna.centola@philips.com</option>
+              <option>luca.colombo@philips.com</option>
+              <option>catello.d'arco@philips.com</option>
+            </select>
+          </div>
+        </div>
+        <div class="actions">
+          <button type="button" class="success" id="generaPdf">Genera PDF</button>
+          <button type="button" class="primary" id="preparaEmail">Prepara email</button>
+        </div>
+        <p class="small" id="nomeFile"></p>
+      </div>
+    </section>
+  </main>
+
+  <div id="printArea"></div>
+  <div id="toast"></div>
+
+  <script>
+    const state = {
+      attivita: [],
+      partecipanti: []
+    };
+
+    const $ = (id) => document.getElementById(id);
+
+    function toast(message) {
+      const el = $("toast");
+      el.textContent = message;
+      el.style.display = "block";
+      window.setTimeout(() => {
+        el.style.display = "none";
+      }, 2600);
+    }
+
+    function value(id) {
+      return ($(id).value || "").trim();
+    }
+
+    function esc(text) {
+      return String(text || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function formatDate(inputValue) {
+      if (!inputValue) return "";
+      const parts = inputValue.split("-");
+      if (parts.length !== 3) return inputValue;
+      return `${parts[2]}/${parts[1]}/${parts[0]}`;
+    }
+
+    function cleanFilePart(text, fallback) {
+      const cleaned = String(text || fallback)
+        .trim()
+        .replace(/[<>:"/\\|?*]+/g, "-")
+        .replace(/\s+/g, "_");
+      return cleaned || fallback;
+    }
+
+    function fileName() {
+      const today = new Date().toISOString().slice(0, 10);
+      const specialist = cleanFilePart(value("istruttore"), "Application_Specialist");
+      const project = cleanFilePart(value("project"), "Project");
+      return `${specialist}_${project}_${today}.pdf`;
+    }
+
+    function subject() {
+      const specialist = value("istruttore") || "Application Specialist non indicato";
+      const serial = value("serial") || "Serial Number non indicato";
+      return `Rapporto Formazione Philips - ${specialist} - SN ${serial}`;
+    }
+
+    function refreshTables() {
+      $("attivitaBody").innerHTML = state.attivita.map((row) => `
+        <tr>
+          <td>${esc(row.tipo)}</td>
+          <td>${esc(row.inizio)}</td>
+          <td>${esc(row.fine)}</td>
+        </tr>
+      `).join("");
+
+      $("partecipantiBody").innerHTML = state.partecipanti.map((row) => `
+        <tr>
+          <td>${esc(row.nome)}</td>
+          <td>${esc(row.qualifica)}</td>
+          <td>${esc(row.data)}</td>
+        </tr>
+      `).join("");
+
+      $("nomeFile").textContent = `Nome PDF: ${fileName()}`;
+    }
+
+    function setActiveTab(tabId) {
+      const target = $(tabId);
+      if (!target) return;
+
+      document.querySelectorAll("nav button").forEach((button) => {
+        const isActive = button.dataset.tab === tabId;
+        button.classList.toggle("active", isActive);
+        button.setAttribute("aria-pressed", isActive ? "true" : "false");
+      });
+
+      document.querySelectorAll("main section").forEach((section) => {
+        section.classList.toggle("active", section.id === tabId);
+      });
+    }
+
+    document.querySelector("nav").addEventListener("click", (event) => {
+      const button = event.target.closest("button[data-tab]");
+      if (!button) return;
+      setActiveTab(button.dataset.tab);
+    });
+
+    $("addAttivita").addEventListener("click", () => {
+      const data = formatDate(value("dataAttivita"));
+      if (!data) {
+        toast("Seleziona la data dell'attivita.");
+        return;
+      }
+      state.attivita.push({
+        tipo: value("tipoAttivita"),
+        inizio: `${data} ${value("oraInizio")}`,
+        fine: `${data} ${value("oraFine")}`
+      });
+      $("dataAttivita").value = "";
+      refreshTables();
+    });
+
+    $("clearAttivita").addEventListener("click", () => {
+      state.attivita = [];
+      refreshTables();
+    });
+
+    $("addPartecipante").addEventListener("click", () => {
+      const nome = value("nomePartecipante").toUpperCase();
+      if (!nome) {
+        toast("Inserisci il nome del partecipante.");
+        return;
+      }
+      state.partecipanti.push({
+        nome,
+        qualifica: value("qualifica"),
+        data: formatDate(value("dataPartecipante"))
+      });
+      $("nomePartecipante").value = "";
+      $("qualifica").value = "";
+      $("dataPartecipante").value = "";
+      refreshTables();
+    });
+
+    $("clearPartecipanti").addEventListener("click", () => {
+      state.partecipanti = [];
+      refreshTables();
+    });
+
+    // --------- Setup Canvas for Signatures (fixed) ----------
+    function setupCanvas(id) {
+      const canvas = $(id);
+      if (!canvas) return;
+      const ctx = canvas.getContext("2d", { willReadFrequently: true });
       let drawing = false;
       let last = null;
 
-      function resizeAndRestore() {
+      // Ensure pointer events are enabled on the element
+      canvas.style.touchAction = "none";
+
+      function resize() {
+        // Save current content
+        const data = canvas.toDataURL();
         const rect = canvas.getBoundingClientRect();
         const ratio = window.devicePixelRatio || 1;
 
-        // snapshot previous content
-        let prevData = null;
-        try { prevData = canvas.toDataURL(); } catch (e) { prevData = null; }
-
+        // Set the internal pixel size to match the displayed size * ratio
         canvas.width = Math.max(1, Math.floor(rect.width * ratio));
         canvas.height = Math.max(1, Math.floor(rect.height * ratio));
+
+        // Scale drawing operations so 1 unit = 1 CSS pixel
         ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
 
-        // background white
-        ctx.fillStyle = '#ffffff';
+        // Fill white background
+        ctx.fillStyle = "#fff";
         ctx.fillRect(0, 0, rect.width, rect.height);
 
-        // restore if possible
-        if (prevData && prevData.length > 100) {
+        // Restore saved image (if any)
+        if (data && data.length > 100) {
           const img = new Image();
           img.onload = () => {
-            try { ctx.drawImage(img, 0, 0, rect.width, rect.height); } catch(e) {}
+            ctx.drawImage(img, 0, 0, rect.width, rect.height);
           };
-          img.src = prevData;
+          img.src = data;
         }
-
-        ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
-        ctx.lineWidth = 3;
-        ctx.strokeStyle = '#000';
       }
 
-      function pointerPos(event) {
+      function getPointFromEvent(ev) {
         const rect = canvas.getBoundingClientRect();
-        return {
-          x: (event.clientX - rect.left),
-          y: (event.clientY - rect.top)
-        };
+        const x = ev.clientX - rect.left;
+        const y = ev.clientY - rect.top;
+        return { x, y };
       }
 
-      canvas.addEventListener('pointerdown', (ev) => {
+      canvas.addEventListener("pointerdown", (ev) => {
         ev.preventDefault();
         drawing = true;
-        last = pointerPos(ev);
-        try { canvas.setPointerCapture(ev.pointerId); } catch(e){}
-      }, { passive: false });
+        last = getPointFromEvent(ev);
+        canvas.setPointerCapture(ev.pointerId);
+      });
 
-      canvas.addEventListener('pointermove', (ev) => {
+      canvas.addEventListener("pointermove", (ev) => {
         if (!drawing || !last) return;
-        ev.preventDefault();
-        const p = pointerPos(ev);
+        const next = getPointFromEvent(ev);
+        ctx.strokeStyle = "#000";
+        ctx.lineWidth = 3;
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
         ctx.beginPath();
         ctx.moveTo(last.x, last.y);
-        ctx.lineTo(p.x, p.y);
+        ctx.lineTo(next.x, next.y);
         ctx.stroke();
-        last = p;
-      }, { passive: false });
+        last = next;
+      });
 
-      const endPointer = (ev) => {
+      function endDraw(ev) {
         if (!drawing) return;
         drawing = false;
         last = null;
-        try { canvas.releasePointerCapture && canvas.releasePointerCapture(ev && ev.pointerId); } catch(e){}
-      };
-
-      canvas.addEventListener('pointerup', endPointer, { passive: false });
-      canvas.addEventListener('pointercancel', endPointer, { passive: false });
-
-      window.addEventListener('resize', resizeAndRestore);
-      resizeAndRestore();
-
-      // clear button
-      const clearBtn = document.querySelector(`button[data-clear="${id}"]`);
-      if (clearBtn) {
-        clearBtn.addEventListener('click', (e) => {
-          e.preventDefault();
-          const rect = canvas.getBoundingClientRect();
-          ctx.clearRect(0, 0, rect.width, rect.height);
-          ctx.fillStyle = '#ffffff';
-          ctx.fillRect(0, 0, rect.width, rect.height);
-        });
+        try { canvas.releasePointerCapture && canvas.releasePointerCapture(ev && ev.pointerId); } catch (e) {}
       }
 
-      // helper isEmpty
-      canvas.isEmpty = function() {
-        try {
-          const rect = canvas.getBoundingClientRect();
-          const data = canvas.toDataURL();
-          const comparison = createEmptyImageDataURL(rect.width, rect.height);
-          return data === comparison;
-        } catch (e) {
-          return false;
-        }
+      canvas.addEventListener("pointerup", endDraw);
+      canvas.addEventListener("pointercancel", endDraw);
+      canvas.addEventListener("pointerout", endDraw);
+      canvas.addEventListener("pointerleave", endDraw);
+
+      // Public clear function via dataset (used below)
+      canvas.clearCanvas = function() {
+        // Clear using real pixel size; reset transform first then fill white
+        ctx.setTransform(1,0,0,1,0,0);
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        const rect = canvas.getBoundingClientRect();
+        const ratio = window.devicePixelRatio || 1;
+        ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+        ctx.fillStyle = "#fff";
+        ctx.fillRect(0, 0, rect.width, rect.height);
       };
 
-      return canvas;
+      // Initialize size
+      resize();
+      // Recompute on window resize
+      window.addEventListener("resize", resize);
     }
 
-    canvasIds.forEach(setupSingleCanvas);
+    setupCanvas("firmaIstruttore");
+    setupCanvas("firmaCliente");
 
-    window.getSignatureDataUrl = function(id) {
-      const c = document.getElementById(id);
-      if (!c) return TRANSPARENT_PNG;
-      try {
-        const rect = c.getBoundingClientRect();
-        if (typeof c.isEmpty === 'function' && c.isEmpty()) {
-          return createEmptyImageDataURL(rect.width || 190, rect.height || 76);
+    // Clear buttons
+    document.querySelectorAll("[data-clear]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const canvas = $(button.dataset.clear);
+        if (!canvas) return;
+        if (typeof canvas.clearCanvas === "function") {
+          canvas.clearCanvas();
+        } else {
+          // fallback
+          const ctx = canvas.getContext("2d");
+          ctx.setTransform(1,0,0,1,0,0);
+          ctx.clearRect(0,0,canvas.width,canvas.height);
         }
-        const tmp = document.createElement('canvas');
-        tmp.width = Math.max(1, Math.floor(rect.width));
-        tmp.height = Math.max(1, Math.floor(rect.height));
-        const tctx = tmp.getContext('2d');
-        tctx.fillStyle = '#ffffff';
-        tctx.fillRect(0, 0, tmp.width, tmp.height);
-        tctx.drawImage(c, 0, 0, tmp.width, tmp.height);
-        return tmp.toDataURL('image/png');
-      } catch (err) {
-        return TRANSPARENT_PNG;
-      }
-    };
-
-    // compatibility: your buildPrint uses signatureImage()
-    window.signatureImage = function(id) {
-      return window.getSignatureDataUrl(id) || TRANSPARENT_PNG;
-    };
-  })();
-
-  // ----------------- Build print area (unchanged, uses signatureImage) -----------------
-  function buildPrint() {
-    const checks = [
-      [$("chk1").checked, "Consegnato Programma di Formazione"],
-      [$("chk2").checked, "Illustrata la documentazione d'Uso del sistema"],
-      [$("chk3").checked, "Eseguita formazione specifica alle tematiche di Sicurezza"]
-    ];
-
-    $("printArea").innerHTML = `
-      <div class="print-title">PHILIPS</div>
-      <div class="print-heading">RAPPORTO INTERVENTO / FORMAZIONE APPLICATIVA</div>
-      <div class="print-grid">
-        <div class="print-cell"><div class="print-label">CLIENTE / REPARTO</div>${esc(value("cliente"))}</div>
-        <div class="print-cell"><div class="print-label">PROJECT N.</div>${esc(value("project"))}</div>
-        <div class="print-cell"><div class="print-label">SISTEMA / MODELLO</div>${esc(value("sistema"))}</div>
-        <div class="print-cell"><div class="print-label">TECH ID / SERIAL NUMBER</div>${esc(value("serial"))}</div>
-      </div>
-
-      <div class="print-heading">DETTAGLI ATTIVITA DI TRAINING GIORNALIERE</div>
-      <table class="print-table">
-        <thead><tr><th>Descrizione Attivita</th><th>Data/Ora Inizio</th><th>Data/Ora Fine</th></tr></thead>
-        <tbody>${state.attivita.map((row) => `<tr><td>${esc(row.tipo)}</td><td>${esc(row.inizio)}</td><td>${esc(row.fine)}</td></tr>`).join("")}</tbody>
-      </table>
-
-      <div class="print-heading">NOTE / DESCRIZIONE DELLE ATTIVITA</div>
-      <div class="print-cell" style="border:1px solid #000; min-height:70px">${esc(value("note")).replace(/\n/g, "<br>")}</div>
-
-      <div style="margin-top:10px">${checks.map(([ok, text]) => `<div>[${ok ? "X" : " "}] ${esc(text)}</div>`).join("")}</div>
-
-      <div class="print-heading">ELENCO PARTECIPANTI E SOTTOSCRIZIONE</div>
-      <table class="print-table">
-        <thead><tr><th>NOME COGNOME</th><th>QUALIFICA</th><th>DATA</th></tr></thead>
-        <tbody>${state.partecipanti.map((row) => `<tr><td>${esc(row.nome)}</td><td>${esc(row.qualifica)}</td><td>${esc(row.data)}</td></tr>`).join("")}</tbody>
-      </table>
-
-      <div class="print-signatures">
-        <div class="print-signature">
-          <div class="print-label">CLINICAL APPLICATION SPECIALIST</div>
-          <div>${esc(value("istruttore"))}</div>
-          <img src="${signatureImage("firmaIstruttore")}" alt="">
-        </div>
-        <div class="print-signature">
-          <div class="print-label">FIRMA PER ACCETTAZIONE CLIENTE</div>
-          <div>${esc(value("respCliente"))}</div>
-          <img src="${signatureImage("firmaCliente")}" alt="">
-        </div>
-      </div>
-    `;
-  }
-
-  // genera PDF -> qui usi window.print() come prima (stampa verso PDF)
-  $("generaPdf").addEventListener("click", () => {
-    $("nomeFile").textContent = `Nome PDF: ${fileName()}`;
-    buildPrint();
-    window.print();
-  });
-
-  // prepara mail (senza allegato, come nel tuo originale)
-  $("preparaEmail").addEventListener("click", () => {
-    const body = "Buongiorno,%0D%0A%0D%0Ain allegato si trasmette il Rapporto di Formazione in formato PDF.%0D%0A%0D%0ACordiali saluti.";
-    const url = `mailto:${encodeURIComponent(value("mailA"))}?subject=${encodeURIComponent(subject())}&body=${body}`;
-    window.location.href = url;
-  });
-
-  // Aggiorna anteprima nome file quando cambiano i campi
-  ["istruttore", "project"].forEach((id) => {
-    $(id).addEventListener("input", refreshTables);
-  });
-
-  if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => {
-      navigator.serviceWorker.register("service-worker.js").catch(() => {});
+      });
     });
-  }
 
-  refreshTables();
-</script>
+    function signatureImage(id) {
+      const c = $(id);
+      if (!c) return "";
+      // toDataURL will capture current visual content
+      return c.toDataURL("image/png");
+    }
+
+    function buildPrint() {
+      const checks = [
+        [$("chk1").checked, "Consegnato Programma di Formazione"],
+        [$("chk2").checked, "Illustrata la documentazione d'Uso del sistema"],
+        [$("chk3").checked, "Eseguita formazione specifica alle tematiche di Sicurezza"]
+      ];
+
+      $("printArea").innerHTML = `
+        <div class="print-title">PHILIPS</div>
+        <div class="print-heading">RAPPORTO INTERVENTO / FORMAZIONE APPLICATIVA</div>
+        <div class="print-grid">
+          <div class="print-cell"><div class="print-label">CLIENTE / REPARTO</div>${esc(value("cliente"))}</div>
+          <div class="print-cell"><div class="print-label">PROJECT N.</div>${esc(value("project"))}</div>
+          <div class="print-cell"><div class="print-label">SISTEMA / MODELLO</div>${esc(value("sistema"))}</div>
+          <div class="print-cell"><div class="print-label">TECH ID / SERIAL NUMBER</div>${esc(value("serial"))}</div>
+        </div>
+
+        <div class="print-heading">DETTAGLI ATTIVITA DI TRAINING GIORNALIERE</div>
+        <table class="print-table">
+          <thead><tr><th>Descrizione Attivita</th><th>Data/Ora Inizio</th><th>Data/Ora Fine</th></tr></thead>
+          <tbody>${state.attivita.map((row) => `<tr><td>${esc(row.tipo)}</td><td>${esc(row.inizio)}</td><td>${esc(row.fine)}</td></tr>`).join("")}</tbody>
+        </table>
+
+        <div class="print-heading">NOTE / DESCRIZIONE DELLE ATTIVITA</div>
+        <div class="print-cell" style="border:1px solid #000; min-height:70px">${esc(value("note")).replace(/\n/g, "<br>")}</div>
+
+        <div style="margin-top:10px">${checks.map(([ok, text]) => `<div>[${ok ? "X" : " "}] ${esc(text)}</div>`).join("")}</div>
+
+        <div class="print-heading">ELENCO PARTECIPANTI E SOTTOSCRIZIONE</div>
+        <table class="print-table">
+          <thead><tr><th>NOME COGNOME</th><th>QUALIFICA</th><th>DATA</th></tr></thead>
+          <tbody>${state.partecipanti.map((row) => `<tr><td>${esc(row.nome)}</td><td>${esc(row.qualifica)}</td><td>${esc(row.data)}</td></tr>`).join("")}</tbody>
+        </table>
+
+        <div class="print-signatures">
+          <div class="print-signature">
+            <div class="print-label">CLINICAL APPLICATION SPECIALIST</div>
+            <div>${esc(value("istruttore"))}</div>
+            <img src="${signatureImage("firmaIstruttore")}" alt="">
+          </div>
+          <div class="print-signature">
+            <div class="print-label">FIRMA PER ACCETTAZIONE CLIENTE</div>
+            <div>${esc(value("respCliente"))}</div>
+            <img src="${signatureImage("firmaCliente")}" alt="">
+          </div>
+        </div>
+      `;
+    }
+
+    $("generaPdf").addEventListener("click", () => {
+      $("nomeFile").textContent = `Nome PDF: ${fileName()}`;
+      buildPrint();
+      window.print();
+    });
+
+    $("preparaEmail").addEventListener("click", () => {
+      const body = "Buongiorno,%0D%0A%0D%0Ain allegato si trasmette il Rapporto di Formazione in formato PDF.%0D%0A%0D%0ACordiali saluti.";
+      const url = `mailto:${encodeURIComponent(value("mailA"))}?subject=${encodeURIComponent(subject())}&body=${body}`;
+      window.location.href = url;
+    });
+
+    ["istruttore", "project"].forEach((id) => {
+      $(id).addEventListener("input", refreshTables);
+    });
+
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("service-worker.js").catch(() => {});
+      });
+    }
+
+    refreshTables();
+  </script>
+</body>
+</html>
