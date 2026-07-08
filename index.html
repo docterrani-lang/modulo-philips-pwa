@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#0b5ede">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-title" content="Modulo Philips">
+    <meta name="apple-mobile-web-app-title" content="Modulo Philips">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="application-name" content="Modulo Philips">
   <link rel="manifest" href="manifest.json">
@@ -232,8 +232,8 @@
       height: 150px;
       border: 1px solid var(--line);
       border-radius: 8px;
-      background: #ffffff;
-      touch-action: none; /* permette gesture personalizzate */
+      background: #fff;
+      touch-action: none;
     }
 
     .small {
@@ -510,18 +510,12 @@
           <div>
             <label>Firma Specialist / Instructor</label>
             <canvas id="firmaIstruttore"></canvas>
-            <div style="display:flex;gap:8px;margin-top:8px">
-              <button type="button" class="danger-button" data-clear="firmaIstruttore">Cancella</button>
-              <button type="button" id="saveIstruttore">Salva Immagine</button>
-            </div>
+            <button type="button" class="danger-button" data-clear="firmaIstruttore">Cancella</button>
           </div>
           <div>
             <label>Firma accettazione cliente</label>
             <canvas id="firmaCliente"></canvas>
-            <div style="display:flex;gap:8px;margin-top:8px">
-              <button type="button" class="danger-button" data-clear="firmaCliente">Cancella</button>
-              <button type="button" id="saveCliente">Salva Immagine</button>
-            </div>
+            <button type="button" class="danger-button" data-clear="firmaCliente">Cancella</button>
           </div>
         </div>
       </div>
@@ -635,136 +629,6 @@
       $("nomeFile").textContent = `Nome PDF: ${fileName()}`;
     }
 
-    // ----- LOGICA FIRMA: USO DI POINTER EVENTS + HIGH-DPI SAFE -----
-    function setupCanvas(id) {
-      const canvas = $(id);
-      const ctx = canvas.getContext("2d", { willReadFrequently: false });
-      let drawing = false;
-      let lastX = 0;
-      let lastY = 0;
-      let scale = 1;
-      let initialized = false;
-
-      function init() {
-        // calcola dimensione visibile
-        const rect = canvas.getBoundingClientRect();
-        if (rect.width === 0 || rect.height === 0) return;
-        const ratio = window.devicePixelRatio || 1;
-        scale = ratio;
-
-        // Imposta dimensione reale del canvas per avere rendering nitido su schermi hi-dpi
-        canvas.width = Math.round(rect.width * ratio);
-        canvas.height = Math.round(rect.height * ratio);
-
-        // imposta dimensione CSS (rimane via style)
-        canvas.style.width = rect.width + "px";
-        canvas.style.height = rect.height + "px";
-
-        // Scala il contesto
-        ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
-
-        // Stili di disegno
-        ctx.lineCap = "round";
-        ctx.lineJoin = "round";
-        ctx.strokeStyle = "#000";
-        ctx.lineWidth = 3;
-        ctx.fillStyle = "#fff";
-        ctx.fillRect(0, 0, rect.width, rect.height);
-
-        initialized = true;
-      }
-
-      function toLocalCoords(clientX, clientY) {
-        const rect = canvas.getBoundingClientRect();
-        // coordinate relative all'area CSS (non alla pixel ratio)
-        const x = (clientX - rect.left);
-        const y = (clientY - rect.top);
-        return { x, y };
-      }
-
-      function pointerDown(e) {
-        // inizializza se necessario
-        if (!initialized) init();
-        drawing = true;
-        const p = toLocalCoords(e.clientX, e.clientY);
-        lastX = p.x;
-        lastY = p.y;
-        ctx.beginPath();
-        ctx.moveTo(lastX, lastY);
-        // previeni scorrimento quando si firma
-        if (e.cancelable) e.preventDefault();
-      }
-
-      function pointerMove(e) {
-        if (!drawing) return;
-        const p = toLocalCoords(e.clientX, e.clientY);
-        // linee morbide con quadratic curve
-        const midX = (lastX + p.x) / 2;
-        const midY = (lastY + p.y) / 2;
-        ctx.quadraticCurveTo(lastX, lastY, midX, midY);
-        ctx.stroke();
-        lastX = p.x;
-        lastY = p.y;
-        if (e.cancelable) e.preventDefault();
-      }
-
-      function pointerUp(e) {
-        if (!drawing) return;
-        drawing = false;
-        ctx.closePath();
-        if (e.cancelable) e.preventDefault();
-      }
-
-      // Usa pointer events per supportare mouse/touch/pen in modo unificato
-      canvas.addEventListener("pointerdown", pointerDown, { passive: false });
-      window.addEventListener("pointermove", pointerMove, { passive: false });
-      window.addEventListener("pointerup", pointerUp, { passive: false });
-      window.addEventListener("pointercancel", pointerUp, { passive: false });
-
-      // Permetti re-inizializzazione se la dimensione del canvas cambia (es. rotazione)
-      function handleResize() {
-        // conserva immagine corrente
-        const rect = canvas.getBoundingClientRect();
-        if (rect.width === 0 || rect.height === 0) return;
-
-        const dataUrl = canvas.toDataURL();
-        init();
-        // ripristina immagine precedente su nuovo contesto
-        const img = new Image();
-        img.onload = function() {
-          ctx.drawImage(img, 0, 0, rect.width, rect.height);
-        };
-        img.src = dataUrl;
-      }
-      window.addEventListener("resize", () => {
-        // leggero debounce
-        clearTimeout(canvas._resizeTimeout);
-        canvas._resizeTimeout = setTimeout(handleResize, 120);
-      });
-
-      // espone funzioni utili
-      canvas.clearSignature = function() {
-        const rect = canvas.getBoundingClientRect();
-        ctx.setTransform(scale, 0, 0, scale, 0, 0);
-        ctx.fillStyle = "#fff";
-        ctx.fillRect(0, 0, rect.width, rect.height);
-        ctx.beginPath();
-      };
-
-      canvas.getDataURL = function() {
-        // restituisce PNG con dimensione corretta
-        return canvas.toDataURL("image/png");
-      };
-
-      // Forza inizializzazione nel momento opportuno
-      canvas.forceInit = init;
-    }
-
-    // inizializza canvases
-    setupCanvas("firmaIstruttore");
-    setupCanvas("firmaCliente");
-
-    // GESTIONE CAMBIO TAB E INIZIALIZZAZIONE DEL CANVAS
     function setActiveTab(tabId) {
       const target = $(tabId);
       if (!target) return;
@@ -778,14 +642,6 @@
       document.querySelectorAll("main section").forEach((section) => {
         section.classList.toggle("active", section.id === tabId);
       });
-
-      // Forza l'inizializzazione corretta appena la scheda firme appare a schermo
-      if (tabId === "firme") {
-        window.setTimeout(() => {
-          if ($("firmaIstruttore").forceInit) $("firmaIstruttore").forceInit();
-          if ($("firmaCliente").forceInit) $("firmaCliente").forceInit();
-        }, 50);
-      }
     }
 
     document.querySelector("nav").addEventListener("click", (event) => {
@@ -836,45 +692,156 @@
       refreshTables();
     });
 
+    function setupCanvas(id) {
+      const canvas = $(id);
+      const ctx = canvas.getContext("2d");
+      let drawing = false;
+      let last = null;
+
+      function resize() {
+        const rect = canvas.getBoundingClientRect();
+        const ratio = window.devicePixelRatio || 1;
+        const image = canvas.toDataURL();
+        canvas.width = Math.max(1, Math.floor(rect.width * ratio));
+        canvas.height = Math.max(1, Math.floor(rect.height * ratio));
+        ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+        ctx.fillStyle = "#fff";
+        ctx.fillRect(0, 0, rect.width, rect.height);
+        if (image && image.length > 100) {
+          const img = new Image();
+          img.onload = () => ctx.drawImage(img, 0, 0, rect.width, rect.height);
+          img.src = image;
+        }
+      }
+
+      function point(event) {
+        const rect = canvas.getBoundingClientRect();
+        return {
+          x: event.clientX - rect.left,
+          y: event.clientY - rect.top
+        };
+      }
+
+      canvas.addEventListener("pointerdown", (event) => {
+        drawing = true;
+        last = point(event);
+        canvas.setPointerCapture(event.pointerId);
+      });
+
+      canvas.addEventListener("pointermove", (event) => {
+        if (!drawing || !last) return;
+        const next = point(event);
+        ctx.strokeStyle = "#000";
+        ctx.lineWidth = 3;
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
+        ctx.beginPath();
+        ctx.moveTo(last.x, last.y);
+        ctx.lineTo(next.x, next.y);
+        ctx.stroke();
+        last = next;
+      });
+
+      canvas.addEventListener("pointerup", () => {
+        drawing = false;
+        last = null;
+      });
+
+      resize();
+      window.addEventListener("resize", resize);
+    }
+
+    setupCanvas("firmaIstruttore");
+    setupCanvas("firmaCliente");
+
     document.querySelectorAll("[data-clear]").forEach((button) => {
       button.addEventListener("click", () => {
         const canvas = $(button.dataset.clear);
-        if (canvas && canvas.clearSignature) {
-          canvas.clearSignature();
-        } else if (canvas) {
-          const ctx = canvas.getContext("2d");
-          ctx.fillStyle = "#ffffff";
-          ctx.fillRect(0, 0, canvas.width, canvas.height);
-        }
+        const ctx = canvas.getContext("2d");
+        const rect = canvas.getBoundingClientRect();
+        ctx.fillStyle = "#fff";
+        ctx.fillRect(0, 0, rect.width, rect.height);
       });
     });
 
-    // pulsanti di salvataggio immagine (per test)
-    $("saveIstruttore").addEventListener("click", () => {
-      const img = $("firmaIstruttore").getDataURL();
-      // per demo, apri in nuova scheda
-      window.open(img, "_blank");
-    });
-    $("saveCliente").addEventListener("click", () => {
-      const img = $("firmaCliente").getDataURL();
-      window.open(img, "_blank");
-    });
-
     function signatureImage(id) {
-      return $(id).getDataURL ? $(id).getDataURL() : $(id).toDataURL("image/png");
+      return $(id).toDataURL("image/png");
     }
 
     function buildPrint() {
       const checks = [
         [$("chk1").checked, "Consegnato Programma di Formazione"],
         [$("chk2").checked, "Illustrata la documentazione d'Uso del sistema"],
-        [$("chk3").checked, "Eseguita formazione specifica sulla Sicurezza"]
+        [$("chk3").checked, "Eseguita formazione specifica alle tematiche di Sicurezza"]
       ];
-      // Resto dell'implementazione di buildPrint (non modificata in questa richiesta)
+
+      $("printArea").innerHTML = `
+        <div class="print-title">PHILIPS</div>
+        <div class="print-heading">RAPPORTO INTERVENTO / FORMAZIONE APPLICATIVA</div>
+        <div class="print-grid">
+          <div class="print-cell"><div class="print-label">CLIENTE / REPARTO</div>${esc(value("cliente"))}</div>
+          <div class="print-cell"><div class="print-label">PROJECT N.</div>${esc(value("project"))}</div>
+          <div class="print-cell"><div class="print-label">SISTEMA / MODELLO</div>${esc(value("sistema"))}</div>
+          <div class="print-cell"><div class="print-label">TECH ID / SERIAL NUMBER</div>${esc(value("serial"))}</div>
+        </div>
+
+        <div class="print-heading">DETTAGLI ATTIVITA DI TRAINING GIORNALIERE</div>
+        <table class="print-table">
+          <thead><tr><th>Descrizione Attivita</th><th>Data/Ora Inizio</th><th>Data/Ora Fine</th></tr></thead>
+          <tbody>${state.attivita.map((row) => `<tr><td>${esc(row.tipo)}</td><td>${esc(row.inizio)}</td><td>${esc(row.fine)}</td></tr>`).join("")}</tbody>
+        </table>
+
+        <div class="print-heading">NOTE / DESCRIZIONE DELLE ATTIVITA</div>
+        <div class="print-cell" style="border:1px solid #000; min-height:70px">${esc(value("note")).replace(/\n/g, "<br>")}</div>
+
+        <div style="margin-top:10px">${checks.map(([ok, text]) => `<div>[${ok ? "X" : " "}] ${esc(text)}</div>`).join("")}</div>
+
+        <div class="print-heading">ELENCO PARTECIPANTI E SOTTOSCRIZIONE</div>
+        <table class="print-table">
+          <thead><tr><th>NOME COGNOME</th><th>QUALIFICA</th><th>DATA</th></tr></thead>
+          <tbody>${state.partecipanti.map((row) => `<tr><td>${esc(row.nome)}</td><td>${esc(row.qualifica)}</td><td>${esc(row.data)}</td></tr>`).join("")}</tbody>
+        </table>
+
+        <div class="print-signatures">
+          <div class="print-signature">
+            <div class="print-label">CLINICAL APPLICATION SPECIALIST</div>
+            <div>${esc(value("istruttore"))}</div>
+            <img src="${signatureImage("firmaIstruttore")}" alt="">
+          </div>
+          <div class="print-signature">
+            <div class="print-label">FIRMA PER ACCETTAZIONE CLIENTE</div>
+            <div>${esc(value("respCliente"))}</div>
+            <img src="${signatureImage("firmaCliente")}" alt="">
+          </div>
+        </div>
+      `;
     }
 
-    // mostra nome file iniziale
+    $("generaPdf").addEventListener("click", () => {
+      $("nomeFile").textContent = `Nome PDF: ${fileName()}`;
+      buildPrint();
+      window.print();
+    });
+
+    $("preparaEmail").addEventListener("click", () => {
+      const body = "Buongiorno,%0D%0A%0D%0Ain allegato si trasmette il Rapporto di Formazione in formato PDF.%0D%0A%0D%0ACordiali saluti.";
+      const url = `mailto:${encodeURIComponent(value("mailA"))}?subject=${encodeURIComponent(subject())}&body=${body}`;
+      window.location.href = url;
+    });
+
+    ["istruttore", "project"].forEach((id) => {
+      $(id).addEventListener("input", refreshTables);
+    });
+
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("service-worker.js").catch(() => {});
+      });
+    }
+
     refreshTables();
   </script>
 </body>
 </html>
+
+
