@@ -255,11 +255,24 @@
         size: A4;
         margin: 12mm;
       }
+      .print-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 14px;
+        border-bottom: 2px solid #0b5ede;
+        padding-bottom: 10px;
+      }
       .print-title {
         color: #0b5ede;
         font-size: 26px;
         font-weight: 700;
-        margin-bottom: 14px;
+      }
+      .print-company {
+        text-align: right;
+        font-size: 10px;
+        line-height: 1.5;
+        color: #333;
       }
       .print-heading {
         font-size: 16px;
@@ -710,7 +723,16 @@
         [$("chk3").checked, "Eseguita formazione specifica alle tematiche di Sicurezza"]
       ];
       $("printArea").innerHTML = `
-        <div class="print-title">PHILIPS</div>
+        <div class="print-header">
+          <div class="print-title">PHILIPS</div>
+          <div class="print-company">
+            Philips S.p.A. (a Socio Unico)<br>
+            Sede Legale: Viale Sarca, 235 &ndash; 20126 Milano<br>
+            Tel. 02.38583000<br>
+            N&deg; Verde Assistenza Tecnica 800 232100<br>
+            www.philips.it
+          </div>
+        </div>
         <div class="print-heading">RAPPORTO INTERVENTO / FORMAZIONE APPLICATIVA</div>
         <div class="print-grid">
           <div class="print-cell"><div class="print-label">CLIENTE / REPARTO</div>${esc(value("cliente"))}</div>
